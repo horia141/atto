@@ -12,6 +12,9 @@ class RelPos(object):
                  repr(self.__row) + ',' + \
                  repr(self.__col) + ')'
 
+    def clone(self):
+        return RelPos(self.__row,self.__col)
+
     @property
     def row(self):
         return self.__row
@@ -23,9 +26,9 @@ class RelPos(object):
 class Geometry(object):
     def __init__(self,abs_beg,rel_beg,abs_end,rel_end):
         self.__abs_beg = abs_beg
-        self.__rel_beg = rel_beg
+        self.__rel_beg = rel_beg.clone()
         self.__abs_end = abs_end
-        self.__rel_end = rel_end
+        self.__rel_end = rel_end.clone()
 
     def __str__(self):
         return str(self.__abs_beg) + ':' + \
@@ -39,6 +42,10 @@ class Geometry(object):
                  repr(self.__rel_beg) + ',' + \
                  repr(self.__abs_end) + ',' + \
                  repr(self.__rel_end) + ')'
+
+    def clone(self):
+        return Geometry(self.__abs_beg,self.__rel_beg,
+                        self.__abs_end,self.__rel_end)
 
     @property
     def absBeg(self):
@@ -58,11 +65,11 @@ class Geometry(object):
 
 class Buffer(object):
     def __init__(self,basic_stream):
-        self.__basic_stream = basic_stream
+        self.__basic_stream = str(basic_stream)
         self.__abs_pos = 0
         self.__rel_pos = RelPos(0,0)
 
-    def tryConsume(self,reobject,group=0):
+    def tryConsume(self,reobject):
         m = reobject.match(self.__basic_stream,self.__abs_pos)
 
         if m:
@@ -71,7 +78,7 @@ class Buffer(object):
             self.__abs_pos = m.end()
             self.__rel_pos = self.abs2RelPos(self.__abs_pos,abs_pos,rel_pos)
             geom = Geometry(abs_pos,rel_pos,self.__abs_pos,self.__rel_pos)
-            return (m.group(group),geom)
+            return (m.group(),geom)
         else:
             return None
 
@@ -128,6 +135,13 @@ class Buffer(object):
         abs_end = self.relPos2Abs(RelPos(geometry.relEnd.row + 1,0))
 
         return self.__basic_stream[abs_beg:abs_end]
+
+    def clone(self):
+        new_buffer = Buffer(self.__basic_stream)
+        new_buffer.__abs_pos = self.__abs_pos
+        new_buffer.__rel_pos = self.__rel_pos
+
+        return new_buffer
 
     @property
     def finished(self):

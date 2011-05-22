@@ -5,7 +5,7 @@ import Stream
 class Token(object):
     def __init__(self,text,geometry):
         self.__text = text
-        self.__geometry = geometry
+        self.__geometry = geometry.clone()
 
     def __str__(self):
         return 'Token \'' + self.__text + '\''
@@ -106,6 +106,8 @@ class DictEnd(Token):
         return 'DictEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 def tokenize(stream):
+    local_stream = stream.clone()
+
     tokens = []
     parsers = [(CallBeg,re.compile(r'[(]')),
                (CallEnd,re.compile(r'[)]')),
@@ -122,9 +124,9 @@ def tokenize(stream):
                (DictEnd,re.compile(r'[}]')),
                (None,re.compile(r'\s+'))]
 
-    while not stream.finished:
+    while not local_stream.finished:
         for tokenType,reobject in parsers:
-            res = stream.tryConsume(reobject)
+            res = local_stream.tryConsume(reobject)
 
             if res:
                 if tokenType:
@@ -132,6 +134,6 @@ def tokenize(stream):
                 break
         else:
             raise Exception('Invalid character at line %d : column %d' % \
-                                (stream.relPos.row,stream.relPos.col))
+                                (local_stream.relPos.row,local_stream.relPos.col))
 
     return tokens
