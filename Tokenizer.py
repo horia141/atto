@@ -1,6 +1,6 @@
 import re
 
-import Utils
+import Stream
 
 class Token(object):
     def __init__(self,text,abs_beg,abs_end,rel_beg,rel_end):
