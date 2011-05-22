@@ -4,6 +4,9 @@ import Stream
 
 class Token(object):
     def __init__(self,text,geometry):
+        assert(isinstance(text,str))
+        assert(isinstance(geometry,Stream.Geometry))
+
         self.__text = text
         self.__geometry = geometry.clone()
 
@@ -106,6 +109,8 @@ class DictEnd(Token):
         return 'DictEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 def tokenize(stream):
+    assert(isinstance(stream,Stream.Buffer))
+
     local_stream = stream.clone()
 
     tokens = []

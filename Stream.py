@@ -1,5 +1,8 @@
 class RelPos(object):
     def __init__(self,row,col):
+        assert(isinstance(row,int))
+        assert(isinstance(col,int))
+
         self.__row = row
         self.__col = col
 
@@ -25,6 +28,11 @@ class RelPos(object):
 
 class Geometry(object):
     def __init__(self,abs_beg,rel_beg,abs_end,rel_end):
+        assert(isinstance(abs_beg,int))
+        assert(isinstance(rel_beg,RelPos))
+        assert(isinstance(abs_end,int))
+        assert(isinstance(rel_end,RelPos))
+
         self.__abs_beg = abs_beg
         self.__rel_beg = rel_beg.clone()
         self.__abs_end = abs_end
@@ -65,11 +73,15 @@ class Geometry(object):
 
 class Buffer(object):
     def __init__(self,basic_stream):
+        assert(isinstance(basic_stream,str))
+
         self.__basic_stream = str(basic_stream)
         self.__abs_pos = 0
         self.__rel_pos = RelPos(0,0)
 
     def tryConsume(self,reobject):
+        # assert(isinstance(reobject,_sre.SRE_Pattern))
+
         m = reobject.match(self.__basic_stream,self.__abs_pos)
 
         if m:
@@ -83,6 +95,10 @@ class Buffer(object):
             return None
 
     def abs2RelPos(self,abs_pos,old_abs_pos=0,old_rel_pos=None):
+        assert(isinstance(abs_pos,int))
+        assert(isinstance(old_abs_pos,int))
+        assert(isinstance(old_rel_pos,RelPos) or old_rel_pos == None)
+
         c_abs = old_abs_pos
         c_row = old_rel_pos.row if old_rel_pos else 0
         c_col = old_rel_pos.col if old_rel_pos else 0
@@ -99,6 +115,8 @@ class Buffer(object):
         return RelPos(c_row,c_col)
 
     def relPos2Abs(self,rel_pos):
+        assert(isinstance(rel_pos,RelPos))
+
         c_abs = 0
         c_row = 0
         c_col = 0
@@ -128,9 +146,13 @@ class Buffer(object):
         return c_abs
 
     def geometry2Frag(self,geometry):
+        assert(isinstance(geometry,Geometry))
+
         return self.__basic_stream[geometry.absBeg:geometry.absEnd]
 
     def geometry2FragRows(self,geometry):
+        assert(isinstance(geometry,Geometry))
+
         abs_beg = self.relPos2Abs(RelPos(geometry.relBeg.row,0))
         abs_end = self.relPos2Abs(RelPos(geometry.relEnd.row + 1,0))
 
