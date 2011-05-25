@@ -66,6 +66,20 @@ class FuncEnd(TkAtom):
     def __repr__(self):
         return 'Tokenizer.FuncEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
+class FuncStar(TkAtom):
+    def __str__(self):
+        return 'FuncStar'
+
+    def __repr__(self):
+        return 'Tokenizer.FuncStar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
+class FuncPlus(TkAtom):
+    def __str__(self):
+        return 'FuncPlus'
+
+    def __repr__(self):
+        return 'Tokenizer.FuncPlus(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
 class DictBeg(TkAtom):
     def __str__(self):
         return 'DictBeg'

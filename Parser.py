@@ -120,7 +120,7 @@ class Func(PsAtom):
         super(Func,self).__init__(geometry)
 
         self.__arg_names = map(lambda x: x.clone(),arg_names)
-        self.__vararg_name = vararg_name.clone()
+        self.__vararg_name = vararg_name.clone() if vararg_name else None
         self.__vararg_minone = vararg_minone
         self.__body = body.clone()
 
@@ -128,7 +128,7 @@ class Func(PsAtom):
         if self.__vararg_name:
             return '[' + ' '.join(map(str,self.__arg_names)) + \
                         (' ' if self.__arg_names != [] else '') + \
-                        ' ' + str(self.__vararg_name) + ('+' if self.__vararg_minone else '*') + \
+                        str(self.__vararg_name) + ('+ ' if self.__vararg_minone else '* ') + \
                         str(self.__body) + ']'
         else:
             return '[' + ' '.join(map(str,self.__arg_names)) + \
@@ -254,7 +254,7 @@ def parse(tokens,pos=0):
             (pos,new_item) = parse(tokens,pos)
 
             if isinstance(tokens[pos],Tokenizer.FuncStar) or \
-                    isinstance(tokens[pos],Tokenizer.FuncPlus)
+                    isinstance(tokens[pos],Tokenizer.FuncPlus):
                 vararg_name = new_item
 
                 if isinstance(tokens[pos],Tokenizer.FuncStar):
@@ -262,6 +262,7 @@ def parse(tokens,pos=0):
                 else:
                     vararg_minone = True
 
+                pos = pos + 1
                 (pos,body) = parse(tokens,pos)
                 contents.append(body)
 
@@ -274,7 +275,7 @@ def parse(tokens,pos=0):
             raise Exception('Invalid function syntax!')
 
         geometry = init_geometry.expandTo(tokens[pos].geometry)
-        return (pos+1,Func(contents[:-1],contents[-1],vararg_name,vararg_minone,geometry))
+        return (pos+1,Func(contents[:-1],vararg_name,vararg_minone,contents[-1],geometry))
     if isinstance(tokens[pos],Tokenizer.FuncEnd):
         raise Exception('Invalid "]" character!')
     if isinstance(tokens[pos],Tokenizer.FuncStar):
