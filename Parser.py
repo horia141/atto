@@ -214,7 +214,7 @@ class Dict(PsAtom):
     def keyvalues():
         return self.__keyvalues
 
-def parse(tokens,pos=0):
+def parse(tokens,pos=0,in_list=False):
     assert(isinstance(tokens,list))
     assert(all(map(lambda x: isinstance(x,Tokenizer.TkAtom),tokens)))
     assert(isinstance(pos,int))
@@ -242,7 +242,31 @@ def parse(tokens,pos=0):
     if isinstance(tokens[pos],Tokenizer.CallEqual):
         return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
     if isinstance(tokens[pos],Tokenizer.Symbol):
-        return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
+        if in_list:
+            return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
+        else:
+            init_geometry = tokens[pos].geometry
+            first = Symbol(tokens[pos].text,tokens[pos].geometry)
+            pos = pos + 1
+            rest = []
+    
+            while pos < len(tokens) and \
+                  isinstance(tokens[pos],Tokenizer.DictColumn):
+                (pos,new_item) = parse(tokens,pos+1,True)
+                rest.append(new_item)
+    
+            if len(rest) == 0:
+                return (pos,first)
+            else:
+                rest.insert(0,first)
+                nogeom = Stream.Geometry(0,Stream.RelPos(0,0),0,Stream.RelPos(0,0))
+                keyvalues = [DictKeyValue(Symbol('Length',nogeom),Symbol(str(len(rest)),nogeom))]
+    
+                for i in range(0,len(rest)):
+                    keyvalues.append(DictKeyValue(Symbol(str(i),nogeom),rest[i]))
+    
+                geometry = init_geometry.expandTo(rest[-1].geometry)
+                return (pos,Dict(keyvalues,geometry))
     if isinstance(tokens[pos],Tokenizer.FuncBeg):
         init_geometry = tokens[pos].geometry
         pos = pos + 1
@@ -297,5 +321,7 @@ def parse(tokens,pos=0):
         return (pos+1,Dict(keyvalues,geometry))
     if isinstance(tokens[pos],Tokenizer.DictEnd):
         raise Exception('Invalid "}" character!')
+    if isinstance(tokens[pos],Tokenizer.DictColumn):
+        return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
 
     raise Exception('Invalid syntax!')
