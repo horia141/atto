@@ -73,15 +73,15 @@ class Call(PsAtom):
         return Call(self.__action,self.__order_args,self.__named_args,self.geometry)
 
     @property
-    def action():
+    def action(self):
         return self.__action
 
     @property
-    def orderArgs():
+    def orderArgs(self):
         return self.__order_args
 
     @property
-    def namedArgs():
+    def namedArgs(self):
         return self.__named_args
 
 class Symbol(PsAtom):
@@ -146,23 +146,23 @@ class Func(PsAtom):
                     self.__body,self.geometry)
 
     @property
-    def argNames():
+    def argNames(self):
         return self.__arg_names
 
     @property
-    def hasVararg():
+    def hasVararg(self):
         return self.__vararg_name != None
 
     @property
-    def varargName():
+    def varargName(self):
         return self.__vararg_name
 
     @property
-    def varargMinOne():
+    def varargMinOne(self):
         return self.__vararg_minone
 
     @property
-    def body():
+    def body(self):
         return self.__body
 
 class DictKeyValue(object):
@@ -184,11 +184,11 @@ class DictKeyValue(object):
         return DictKeyValue(self.__key,self.__value)
 
     @property
-    def key():
+    def key(self):
         return self.__key
 
     @property
-    def value():
+    def value(self):
         return self.__value
 
 class Dict(PsAtom):
@@ -211,7 +211,7 @@ class Dict(PsAtom):
         return Dict(self.__keyvalues,self.geometry)
 
     @property
-    def keyvalues():
+    def keyvalues(self):
         return self.__keyvalues
 
 def parse(tokens,pos=0,in_list=False):
