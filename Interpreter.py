@@ -77,7 +77,7 @@ class Func(InAtom):
         return False
 
     def clone(self):
-        return Func(self.__arg_name,self.__vararg_name,self.__vararg_minone,
+        return Func(self.__arg_names,self.__vararg_name,self.__vararg_minone,
                     self.__body,self.__env)
 
     @property
@@ -202,38 +202,43 @@ def interpret(atom,args,env):
             else:
                 raise Exception('Cannot apply symbol "' + func.text + '"!')
         if isinstance(func,Func):
-            new_args = dict([(name,None) for name in func.argNames])
-
-            for nv in atom.namedArgs:
-                name = interpret(nv.name,args,env)
-                value = interpret(nv.value,args,env)
-
-                if not isinstance(name,Symbol):
-                    raise Exception('Named argument must be a Symbol!')
-
-                if name.text not in new_args:
-                    raise Exception('Invalid argument "' + name.text + '"!')
-
-                new_args[name.text] = value
-
-            idx = 0
-
-            for name in func.argNames:
-                if new_args[name] == None:
-                    if idx < len(atom.orderArgs):
-                        value = interpret(atom.orderArgs[idx],args,env)
-                        new_args[name] = value
-                        idx = idx + 1
-                    else:
-                        raise Exception('Too few arguments in call to function!')
-
-            # We have varargs
-            if idx < len(atom.orderArgs):
-                raise Exception('Too many arguments in call to function!')
-
-            return interpret(func.body,new_args,func.env)
+            if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
+                return func
+            else:
+                new_args = dict([(name,None) for name in func.argNames])
+    
+                for nv in atom.namedArgs:
+                    name = interpret(nv.name,args,env)
+                    value = interpret(nv.value,args,env)
+    
+                    if not isinstance(name,Symbol):
+                        raise Exception('Named argument must be a Symbol!')
+    
+                    if name.text not in new_args:
+                        raise Exception('Invalid argument "' + name.text + '"!')
+    
+                    new_args[name.text] = value
+    
+                idx = 0
+    
+                for name in func.argNames:
+                    if new_args[name] == None:
+                        if idx < len(atom.orderArgs):
+                            value = interpret(atom.orderArgs[idx],args,env)
+                            new_args[name] = value
+                            idx = idx + 1
+                        else:
+                            raise Exception('Too few arguments in call to function!')
+    
+                # We have varargs
+                if idx < len(atom.orderArgs):
+                    raise Exception('Too many arguments in call to function!')
+    
+                return interpret(func.body,new_args,func.env)
         if isinstance(func,Dict):
-            if len(atom.orderArgs) == 1 and len(atom.namedArgs) == 0:
+            if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
+                return func
+            elif len(atom.orderArgs) == 1 and len(atom.namedArgs) == 0:
                 key = interpret(atom.orderArgs[0],args,env)
 
                 for kv in func.keyvalues:
