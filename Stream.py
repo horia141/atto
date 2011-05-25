@@ -11,7 +11,7 @@ class RelPos(object):
                str(self.__col)
 
     def __repr__(self):
-        return 'RelPos(' + \
+        return 'Stream.RelPos(' + \
                  repr(self.__row) + ',' + \
                  repr(self.__col) + ')'
 
@@ -45,11 +45,19 @@ class Geometry(object):
                str(self.__rel_end)
 
     def __repr__(self):
-        return 'Geometry(' + \
+        return 'Stream.Geometry(' + \
                  repr(self.__abs_beg) + ',' + \
                  repr(self.__rel_beg) + ',' + \
                  repr(self.__abs_end) + ',' + \
                  repr(self.__rel_end) + ')'
+
+    def expandTo(self,other_geometry):
+        assert(isinstance(other_geometry,Geometry))
+
+        return Geometry(self.__abs_beg,
+                        self.__rel_beg,
+                        other_geometry.absEnd,
+                        other_geometry.relEnd)
 
     def clone(self):
         return Geometry(self.__abs_beg,self.__rel_beg,
@@ -78,6 +86,12 @@ class Buffer(object):
         self.__basic_stream = str(basic_stream)
         self.__abs_pos = 0
         self.__rel_pos = RelPos(0,0)
+
+    def __str__(self):
+        return 'Buffer ' + str(self.__abs_pos) + '@' + repr(self.__basic_stream)
+
+    def __repr__(self):
+        return 'Stream.Buffer(' + repr(self.__basic_stream) + ')'
 
     def tryConsume(self,reobject):
         # assert(isinstance(reobject,_sre.SRE_Pattern))

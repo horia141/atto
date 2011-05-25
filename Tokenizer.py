@@ -2,19 +2,19 @@ import re
 
 import Stream
 
-class Token(object):
+class TkAtom(object):
     def __init__(self,text,geometry):
         assert(isinstance(text,str))
         assert(isinstance(geometry,Stream.Geometry))
 
-        self.__text = text
+        self.__text = str(text)
         self.__geometry = geometry.clone()
 
     def __str__(self):
-        return 'Token \'' + self.__text + '\''
+        return 'TkAtom \'' + self.__text + '\''
 
     def __repr__(self):
-        return 'Token(' + repr(self.__text) + ',' + repr(self.__geometry) + ')'
+        return 'Tokenizer.TkAtom(' + repr(self.__text) + ',' + repr(self.__geometry) + ')'
 
     @property
     def text(self):
@@ -24,89 +24,61 @@ class Token(object):
     def geometry(self):
         return self.__geometry
 
-class CallBeg(Token):
+class CallBeg(TkAtom):
     def __str__(self):
         return 'CallBeg'
 
     def __repr__(self):
-        return 'CallBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.CallBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class CallEnd(Token):
+class CallEnd(TkAtom):
     def __str__(self):
         return 'CallEnd'
 
     def __repr__(self):
-        return 'CallEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.CallEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class Column(Token):
+class CallEqual(TkAtom):
     def __str__(self):
-        return 'Column'
+        return 'CallEqual'
 
     def __repr__(self):
-        return 'Column(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.CallEqual(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class Dollar(Token):
-    def __str__(self):
-        return 'Dollar'
-
-    def __repr__(self):
-        return 'Dollar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
-class Equal(Token):
-    def __str__(self):
-        return 'Equal'
-
-    def __repr__(self):
-        return 'Equal(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
-class Star(Token):
-    def __str__(self):
-        return 'Star'
-
-    def __repr__(self):
-        return 'Star(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
-class Plus(Token):
-    def __str__(self):
-        return 'Plus'
-
-    def __repr__(self):
-        return 'Plus(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
-class Symbol(Token):
+class Symbol(TkAtom):
     def __str__(self):
         return 'Symbol \'' + self.text + '\''
 
     def __repr__(self):
-        return 'Symbol(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.Symbol(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class FuncBeg(Token):
+class FuncBeg(TkAtom):
     def __str__(self):
         return 'FuncBeg'
 
     def __repr__(self):
-        return 'FuncBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.FuncBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class FuncEnd(Token):
+class FuncEnd(TkAtom):
     def __str__(self):
         return 'FuncEnd'
 
     def __repr__(self):
-        return 'FuncEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.FuncEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class DictBeg(Token):
+class DictBeg(TkAtom):
     def __str__(self):
         return 'DictBeg'
 
     def __repr__(self):
-        return 'DictBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.DictBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class DictEnd(Token):
+class DictEnd(TkAtom):
     def __str__(self):
         return 'DictEnd'
 
     def __repr__(self):
-        return 'DictEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.DictEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 def tokenize(stream):
     assert(isinstance(stream,Stream.Buffer))
@@ -116,15 +88,13 @@ def tokenize(stream):
     tokens = []
     parsers = [(CallBeg,re.compile(r'[(]')),
                (CallEnd,re.compile(r'[)]')),
-               (Column,re.compile(r'[|]')),
-               (Dollar,re.compile(r'[$]')),
-               (Equal,re.compile(r'[=]')),
-               (Star,re.compile(r'[*]')),
-               (Plus,re.compile(r'[+]')),
-               (Symbol,re.compile(r'[a-zA-Z0-9-_]+')),
+               (CallEqual,re.compile(r'[=]')),
+               (Symbol,re.compile(r'[a-zA-Z0-9~`!@#$%^&_\-:;"\'|\\,.?/]+')),
                (Symbol,re.compile(r'[<]([^>]+)[>]')),
                (FuncBeg,re.compile(r'[[]')),
                (FuncEnd,re.compile(r'[]]')),
+               (FuncStar,re.compile(r'[*]')),
+               (FuncPlus,re.compile(r'[+]')),
                (DictBeg,re.compile(r'[{]')),
                (DictEnd,re.compile(r'[}]')),
                (None,re.compile(r'\s+'))]
