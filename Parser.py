@@ -220,108 +220,115 @@ def parse(tokens,pos=0,in_list=False):
     assert(isinstance(pos,int))
     assert(pos < len(tokens))
 
-    if isinstance(tokens[pos],Tokenizer.CallBeg):
-        init_geometry = tokens[pos].geometry
-        (pos,action) = parse(tokens,pos+1)
-        order_args = []
-        named_args = []
+    full_geometry = tokens[pos].geometry
+    built_list = []
 
-        while not isinstance(tokens[pos],Tokenizer.CallEnd):
-            (pos,new_arg) = parse(tokens,pos)
-
-            if isinstance(tokens[pos],Tokenizer.CallEqual):
-                (pos,value) = parse(tokens,pos+1)
-                named_args.append(CallNamedArg(new_arg,value))
-            else:
-                order_args.append(new_arg)
-
-        geometry = init_geometry.expandTo(tokens[pos].geometry)
-        return (pos+1,Call(action,order_args,named_args,geometry))
-    if isinstance(tokens[pos],Tokenizer.CallEnd):
-        raise Exception('Invalid ")" character!')
-    if isinstance(tokens[pos],Tokenizer.CallEqual):
-        return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
-    if isinstance(tokens[pos],Tokenizer.Symbol):
-        if in_list:
-            return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
-        else:
+    while True: # Ugh!
+        if isinstance(tokens[pos],Tokenizer.CallBeg):
             init_geometry = tokens[pos].geometry
-            first = Symbol(tokens[pos].text,tokens[pos].geometry)
-            pos = pos + 1
-            rest = []
-    
-            while pos < len(tokens) and \
-                  isinstance(tokens[pos],Tokenizer.DictColumn):
-                (pos,new_item) = parse(tokens,pos+1,True)
-                rest.append(new_item)
-    
-            if len(rest) == 0:
-                return (pos,first)
-            else:
-                rest.insert(0,first)
-                nogeom = Stream.Geometry(0,Stream.RelPos(0,0),0,Stream.RelPos(0,0))
-                keyvalues = [DictKeyValue(Symbol('Length',nogeom),Symbol(str(len(rest)),nogeom))]
-    
-                for i in range(0,len(rest)):
-                    keyvalues.append(DictKeyValue(Symbol(str(i),nogeom),rest[i]))
-    
-                geometry = init_geometry.expandTo(rest[-1].geometry)
-                return (pos,Dict(keyvalues,geometry))
-    if isinstance(tokens[pos],Tokenizer.FuncBeg):
-        init_geometry = tokens[pos].geometry
-        pos = pos + 1
-        contents = []
-        vararg_name = None
-        vararg_minone = None
+            (pos,action) = parse(tokens,pos+1)
+            order_args = []
+            named_args = []
 
-        while not isinstance(tokens[pos],Tokenizer.FuncEnd):
-            (pos,new_item) = parse(tokens,pos)
+            while not isinstance(tokens[pos],Tokenizer.CallEnd):
+                (pos,new_arg) = parse(tokens,pos)
 
-            if isinstance(tokens[pos],Tokenizer.FuncStar) or \
-                    isinstance(tokens[pos],Tokenizer.FuncPlus):
-                vararg_name = new_item
-
-                if isinstance(tokens[pos],Tokenizer.FuncStar):
-                    vararg_minone = False
+                if isinstance(tokens[pos],Tokenizer.CallEqual):
+                    (pos,value) = parse(tokens,pos+1)
+                    named_args.append(CallNamedArg(new_arg,value))
                 else:
-                    vararg_minone = True
+                    order_args.append(new_arg)
 
+            geometry = init_geometry.expandTo(tokens[pos].geometry)
+            built_list.append(Call(action,order_args,named_args,geometry))
+        elif isinstance(tokens[pos],Tokenizer.CallEnd):
+            raise Exception('Invalid ")" character!')
+        elif isinstance(tokens[pos],Tokenizer.CallEqual):
+            built_list.append(Symbol(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.Symbol):
+            built_list.append(Symbol(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.FuncBeg):
+            init_geometry = tokens[pos].geometry
+            pos = pos + 1
+            contents = []
+            vararg_name = None
+            vararg_minone = None
+
+            while not isinstance(tokens[pos],Tokenizer.FuncEnd):
+                (pos,new_item) = parse(tokens,pos)
+
+                if isinstance(tokens[pos],Tokenizer.FuncStar) or \
+                   isinstance(tokens[pos],Tokenizer.FuncPlus):
+                    vararg_name = new_item
+
+                    if isinstance(tokens[pos],Tokenizer.FuncStar):
+                        vararg_minone = False
+                    else:
+                        vararg_minone = True
+
+                    pos = pos + 1
+                    (pos,body) = parse(tokens,pos)
+                    contents.append(body)
+
+                    if not isinstance(tokens[pos],Tokenizer.FuncEnd):
+                        raise Exception('Invalid function syntax #2!')
+                else:
+                    contents.append(new_item)
+
+            if len(contents) == 0:
+                raise Exception('Invalid function syntax!')
+
+            geometry = init_geometry.expandTo(tokens[pos].geometry)
+            built_list.append(Func(contents[:-1],vararg_name,vararg_minone,contents[-1],geometry))
+        elif isinstance(tokens[pos],Tokenizer.FuncEnd):
+            raise Exception('Invalid "]" character!')
+        elif isinstance(tokens[pos],Tokenizer.FuncStar):
+            built_list.append(Symbol(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.FuncPlus):
+            built_list.append(Symbol(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.DictBeg):
+            init_geometry = tokens[pos].geometry
+            pos = pos+1
+            keyvalues = []
+
+            while not isinstance(tokens[pos],Tokenizer.DictEnd):
+                (pos,key) = parse(tokens,pos)
+                (pos,value) = parse(tokens,pos)
+
+                keyvalues.append(DictKeyValue(key,value))
+
+            geometry = init_geometry.expandTo(tokens[pos].geometry)
+            built_list.append(Dict(keyvalues,geometry))
+        elif isinstance(tokens[pos],Tokenizer.DictEnd):
+            raise Exception('Invalid "}" character!')
+        elif isinstance(tokens[pos],Tokenizer.DictColumn):
+            built_list.append(Symbol(tokens[pos].text,tokens[pos].geometry))
+        else:
+            raise Exception('Invalid syntax!')
+
+        pos = pos + 1
+
+        if in_list:
+            break
+        else:
+            if pos < len(tokens) and \
+               isinstance(tokens[pos],Tokenizer.DictColumn):
                 pos = pos + 1
-                (pos,body) = parse(tokens,pos)
-                contents.append(body)
-
-                if not isinstance(tokens[pos],Tokenizer.FuncEnd):
-                    raise Exception('Invalid function syntax #2!')
             else:
-                contents.append(new_item)
+                break
 
-        if len(contents) == 0:
-            raise Exception('Invalid function syntax!')
+    if len(built_list) == 1:
+        return (pos,built_list[0])
+    else:
+        new_keyvalues = []
+        nogeom = Stream.Geometry(0,Stream.RelPos(0,0),
+                                 0,Stream.RelPos(0,0))
 
-        geometry = init_geometry.expandTo(tokens[pos].geometry)
-        return (pos+1,Func(contents[:-1],vararg_name,vararg_minone,contents[-1],geometry))
-    if isinstance(tokens[pos],Tokenizer.FuncEnd):
-        raise Exception('Invalid "]" character!')
-    if isinstance(tokens[pos],Tokenizer.FuncStar):
-        return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
-    if isinstance(tokens[pos],Tokenizer.FuncPlus):
-        return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
-    if isinstance(tokens[pos],Tokenizer.DictBeg):
-        init_geometry = tokens[pos].geometry
-        pos = pos+1
-        keyvalues = []
+        new_keyvalues.append(DictKeyValue(Symbol('Length',nogeom),
+                                          Symbol(str(len(built_list)),nogeom)))
 
-        while not isinstance(tokens[pos],Tokenizer.DictEnd):
-            (pos,key) = parse(tokens,pos)
-            (pos,value) = parse(tokens,pos)
+        for i in range(0,len(built_list)):
+            new_keyvalues.append(DictKeyValue(Symbol(str(i),nogeom),built_list[i]))
 
-            keyvalues.append(DictKeyValue(key,value))
-
-        geometry = init_geometry.expandTo(tokens[pos].geometry)
-        return (pos+1,Dict(keyvalues,geometry))
-    if isinstance(tokens[pos],Tokenizer.DictEnd):
-        raise Exception('Invalid "}" character!')
-    if isinstance(tokens[pos],Tokenizer.DictColumn):
-        return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
-
-    raise Exception('Invalid syntax!')
+        geometry = full_geometry.expandTo(tokens[pos-1].geometry)
+        return (pos,Dict(new_keyvalues,geometry))
