@@ -187,54 +187,55 @@ class Func(PsAtom):
     def body(self):
         return self.__body
 
-class DictKeyValue(object):
-    def __init__(self,key,value):
-        assert(isinstance(key,PsAtom))
+class DictKeysValue(object):
+    def __init__(self,keys,value):
+        assert(isinstance(keys,list))
+        assert(all(map(lambda x: isinstance(x,PsAtom),keys)))
         assert(isinstance(value,PsAtom))
 
-        self.__key = key.clone()
+        self.__keys = map(lambda x: x.clone(),keys)
         self.__value = value.clone()
 
     def __str__(self):
-        return str(self.__key) + ' ' + str(self.__value)
+        return ' '.join(map(str,self.__keys)) + ' ' + str(self.__value)
 
     def __repr__(self):
-        return 'Parser.DictKeyValue(' + repr(self.__key) + ',' + \
+        return 'Parser.DictKeysValue(' + repr(self.__keys) + ',' + \
                                         repr(self.__value) + ')'
 
     def clone(self):
-        return DictKeyValue(self.__key,self.__value)
+        return DictKeysValue(self.__keys,self.__value)
 
     @property
-    def key(self):
-        return self.__key
+    def keys(self):
+        return self.__keys
 
     @property
     def value(self):
         return self.__value
 
 class Dict(PsAtom):
-    def __init__(self,keyvalues,geometry):
-        assert(isinstance(keyvalues,list))
-        assert(all(map(lambda x: isinstance(x,DictKeyValue),keyvalues)))
+    def __init__(self,keysvalues,geometry):
+        assert(isinstance(keysvalues,list))
+        assert(all(map(lambda x: isinstance(x,DictKeysValue),keysvalues)))
 
         super(Dict,self).__init__(geometry)
 
-        self.__keyvalues = map(lambda x: x.clone(),keyvalues)
+        self.__keysvalues = map(lambda x: x.clone(),keysvalues)
 
     def __str__(self):
-        return '{' + ' '.join(map(str,self.__keyvalues)) + '}'
+        return '{' + '|'.join(map(str,self.__keysvalues)) + '}'
 
     def __repr__(self):
-        return 'Parser.Dict(' + '[' + ','.join(map(repr,self.__keyvalues)) + '],' + \
+        return 'Parser.Dict(' + '[' + ','.join(map(repr,self.__keysvalues)) + '],' + \
                                       repr(self.geometry) + ')'
 
     def clone(self):
-        return Dict(self.__keyvalues,self.geometry)
+        return Dict(self.__keysvalues,self.geometry)
 
     @property
-    def keyvalues(self):
-        return self.__keyvalues
+    def keysvalues(self):
+        return self.__keysvalues
 
 def parse(tokens,pos=0):
     assert(isinstance(tokens,list))
@@ -322,19 +323,29 @@ def parse(tokens,pos=0):
     elif isinstance(tokens[pos],Tokenizer.DictBeg):
         init_geometry = tokens[pos].geometry
         pos = pos+1
-        keyvalues = []
+        keysvalues = []
 
         while not isinstance(tokens[pos],Tokenizer.DictEnd):
-            (pos,key) = parse(tokens,pos)
-            (pos,value) = parse(tokens,pos)
+            keysvalue = []
 
-            keyvalues.append(DictKeyValue(key,value))
+            while not isinstance(tokens[pos],Tokenizer.Column) and \
+                  not isinstance(tokens[pos],Tokenizer.DictEnd):
+                (pos,newkey) = parse(tokens,pos)
+                keysvalue.append(newkey)
+
+            if len(keysvalue) < 2:
+                raise Exception('Invalid dictionary format!')
+
+            if isinstance(tokens[pos],Tokenizer.Column):
+                pos = pos + 1
+
+            keysvalues.append(DictKeysValue(keysvalue[:-1],keysvalue[-1]))
 
         geometry = init_geometry.expandTo(tokens[pos].geometry)
-        return (pos+1,Dict(keyvalues,geometry))
+        return (pos+1,Dict(keysvalues,geometry))
     elif isinstance(tokens[pos],Tokenizer.DictEnd):
         raise Exception('Invalid "}" character!')
-    elif isinstance(tokens[pos],Tokenizer.DictColumn):
+    elif isinstance(tokens[pos],Tokenizer.Column):
         return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
     else:
         raise Exception('Invalid syntax!')
