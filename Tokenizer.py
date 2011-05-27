@@ -45,6 +45,13 @@ class CallEqual(TkAtom):
     def __repr__(self):
         return 'Tokenizer.CallEqual(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
+class Lookup(TkAtom):
+    def __str__(self):
+        return 'Lookup'
+
+    def __repr__(self):
+        return 'Tokenizer.Lookup(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
 class Symbol(TkAtom):
     def __str__(self):
         return 'Symbol \'' + self.text + '\''
@@ -94,13 +101,6 @@ class DictEnd(TkAtom):
     def __repr__(self):
         return 'Tokenizer.DictEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class DictColumn(TkAtom):
-    def __str__(self):
-        return 'DictColumn'
-
-    def __repr__(self):
-        return 'Tokenizer.DictColumn(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 def tokenize(stream):
     assert(isinstance(stream,Stream.Buffer))
 
@@ -110,6 +110,7 @@ def tokenize(stream):
     parsers = [(CallBeg,re.compile(r'[(]')),
                (CallEnd,re.compile(r'[)]')),
                (CallEqual,re.compile(r'[=]')),
+               (Lookup,re.compile(r'[:]')),
                (Symbol,re.compile(r'[a-zA-Z0-9~`!@#$%^&_\-;"\'|\\,.?/]+')),
                (Symbol,re.compile(r'[<]([^>]+)[>]')),
                (FuncBeg,re.compile(r'[[]')),
@@ -118,7 +119,6 @@ def tokenize(stream):
                (FuncPlus,re.compile(r'[+]')),
                (DictBeg,re.compile(r'[{]')),
                (DictEnd,re.compile(r'[}]')),
-               (DictColumn,re.compile(r'[:]')),
                (None,re.compile(r'\s+'))]
 
     while not local_stream.finished:
