@@ -93,7 +93,7 @@ class Buffer(object):
     def __repr__(self):
         return 'Stream.Buffer(' + repr(self.__basic_stream) + ')'
 
-    def tryConsume(self,reobject):
+    def tryConsume(self,reobject,group=0):
         # assert(isinstance(reobject,_sre.SRE_Pattern))
 
         m = reobject.match(self.__basic_stream,self.__abs_pos)
@@ -104,7 +104,7 @@ class Buffer(object):
             self.__abs_pos = m.end()
             self.__rel_pos = self.abs2RelPos(self.__abs_pos,abs_pos,rel_pos)
             geom = Geometry(abs_pos,rel_pos,self.__abs_pos,self.__rel_pos)
-            return (m.group(),geom)
+            return (m.group(group),geom)
         else:
             return None
 

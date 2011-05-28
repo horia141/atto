@@ -59,6 +59,20 @@ class Symbol(TkAtom):
     def __repr__(self):
         return 'Tokenizer.Symbol(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
+class BlockBeg(TkAtom):
+    def __str__(self):
+        return 'BlockBeg'
+
+    def __repr__(self):
+        return 'Tokenizer.BlockBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
+class BlockEnd(TkAtom):
+    def __str__(self):
+        return 'BlockEnd'
+
+    def __repr__(self):
+        return 'Tokenizer.BlockEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
 class FuncBeg(TkAtom):
     def __str__(self):
         return 'FuncBeg'
@@ -101,37 +115,31 @@ class DictEnd(TkAtom):
     def __repr__(self):
         return 'Tokenizer.DictEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class Column(TkAtom):
-    def __str__(self):
-        return 'Column'
-
-    def __repr__(self):
-        return 'Tokenizer.Column(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 def tokenize(stream):
     assert(isinstance(stream,Stream.Buffer))
 
     local_stream = stream.clone()
 
     tokens = []
-    parsers = [(CallBeg,re.compile(r'[(]')),
-               (CallEnd,re.compile(r'[)]')),
-               (CallEqual,re.compile(r'[=]')),
-               (Lookup,re.compile(r'[:]')),
-               (Symbol,re.compile(r'[a-zA-Z0-9~`!@#$%^&_\-;"\'\\,.?/]+')),
-               (Symbol,re.compile(r'[<]([^>]+)[>]')),
-               (FuncBeg,re.compile(r'[[]')),
-               (FuncEnd,re.compile(r'[]]')),
-               (FuncStar,re.compile(r'[*]')),
-               (FuncPlus,re.compile(r'[+]')),
-               (DictBeg,re.compile(r'[{]')),
-               (DictEnd,re.compile(r'[}]')),
-               (Column,re.compile(r'[|]')),
-               (None,re.compile(r'\s+'))]
+    parsers = [(CallBeg,re.compile(r'[(]'),0),
+               (CallEnd,re.compile(r'[)]'),0),
+               (CallEqual,re.compile(r'[=]'),0),
+               (Lookup,re.compile(r'[:]'),0),
+               (Symbol,re.compile(r'[a-zA-Z0-9~!@#$%^&_\-;"\'|\\,.?/]+'),0),
+               (Symbol,re.compile(r'[`]([^`]+)[`]'),1),
+               (BlockBeg,re.compile(r'[{]'),0),
+               (BlockEnd,re.compile(r'[}]'),0),
+               (FuncBeg,re.compile(r'[[]'),0),
+               (FuncEnd,re.compile(r'[]]'),0),
+               (FuncStar,re.compile(r'[*]'),0),
+               (FuncPlus,re.compile(r'[+]'),0),
+               (DictBeg,re.compile(r'[<]'),0),
+               (DictEnd,re.compile(r'[>]'),0),
+               (None,re.compile(r'\s+'),0)]
 
     while not local_stream.finished:
-        for tokenType,reobject in parsers:
-            res = local_stream.tryConsume(reobject)
+        for tokenType,reobject,group in parsers:
+            res = local_stream.tryConsume(reobject,group)
 
             if res:
                 if tokenType:
