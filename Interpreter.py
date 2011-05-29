@@ -180,6 +180,24 @@ class Dict(InAtom):
 
         return True
 
+    def lookup(self,key):
+        assert(isinstance(key,InAtom))
+
+        for (k,v) in self.__keyvalues:
+            if key == k:
+                return v
+
+        raise Exception('Cannot find key "' + str(key) + '"!')
+
+    def lookupS(self,key):
+        assert(isinstance(key,str))
+
+        for (k,v) in self.__keyvalues:
+            if isinstance(k,Symbol) and key == k.text:
+                return v
+
+        raise Exception('Cannot find key "' + key + '"!')
+
     def clone(self):
         return Dict(self.__keyvalues)
 
@@ -263,7 +281,7 @@ def interpret(atom,env):
                 args[fn.varargName] = Dict(vararg_kvs)
 
             if isinstance(fn,BuiltIn):
-                return fn.func(args)
+                return fn.func(**args)
             else:
                 new_env = fn.env
                 new_env.append(args)
@@ -271,13 +289,7 @@ def interpret(atom,env):
                 return interpret(fn.body,new_env)
         elif isinstance(fn,Dict):
             if len(atom.orderArgs) == 1 and len(atom.namedArgs) == 0:
-                ev_arg = interpret(atom.orderArgs[0],env)
-
-                for (key,value) in fn.keyvalues:
-                    if ev_arg == key:
-                        return value
-
-                raise Exception('Cannot find key "' + str(atom.orderArgs[0]) + '"!')
+                return fn.lookup(interpret(atom.orderArgs[0],env))
             else:
                 raise Exception('Invalid syntax for dictionary lookup!')
         else:
@@ -324,15 +336,18 @@ def interpret(atom,env):
     else:
         raise Exception('Invalid atom!')
 
-def add(args):
-    if not isinstance(args['a'],Symbol):
+def add(a,b,va):
+    if not isinstance(a,Symbol):
         raise Exception('Invalid argument for builtin "add"!')
 
-    if not isinstance(args['b'],Symbol):
+    if not isinstance(a,Symbol):
         raise Exception('Invalid argument for builtin "add"!')
 
     try:
-        res = int(args['a'].text) + int(args['b'].text)
+        res = int(a.text) + int(b.text)
+
+        for i in range(0,int(va.lookupS('Length').text)):
+            res = res + int(va.lookupS(str(i)).text)
     except ValueError,e:
             raise Exception('Invalid argument for builtin "add"!')
 
@@ -343,6 +358,6 @@ def doit(program):
     b = Tokenizer.tokenize(a)
     c = Parser.parse(b)
 
-    basic_env = {'add':BuiltIn(['a','b'],None,None,add)}
+    basic_env = {'add':BuiltIn(['a','b'],'va',False,add)}
 
     return interpret(c[1],[basic_env])
