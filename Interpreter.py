@@ -163,9 +163,18 @@ def interpret(atom,env):
             raise Exception('Cannot call a symbol!')
         elif isinstance(fn,Func):
             args = dict([(name,None) for name in fn.argNames])
+            total_arg_cnt = len(atom.namedArgs) + len(atom.orderArgs)
 
-            if len(args) != len(atom.namedArgs) + len(atom.orderArgs):
-                raise Exception('Invalid number of arguments!')
+            if fn.hasVararg:
+                if fn.varargMinOne:
+                    if len(args) >= total_arg_cnt:
+                        raise Exception('Invalid number of arguments!')
+                else:
+                    if len(args) > total_arg_cnt:
+                        raise Exception('Invalid number of arguments!')
+            else:
+                if len(args) != total_arg_cnt:
+                    raise Exception('Invalid number of arguments!')
 
             for named_arg in atom.namedArgs:
                 named_name = interpret(named_arg.name,env)
@@ -187,6 +196,19 @@ def interpret(atom,env):
                 if args[order_args] == None:
                     args[order_args] = interpret(atom.orderArgs[carg],env)
                     carg = carg + 1
+
+            if fn.hasVararg:
+                vararg_i = 0
+                vararg_cnt = total_arg_cnt - len(args)
+                vararg_kvs = [(Symbol('Length'),Symbol(str(vararg_cnt)))]
+    
+                while vararg_i < vararg_cnt:
+                    vararg_kvs.append((Symbol(str(vararg_i)),
+                                       interpret(atom.orderArgs[carg],env)))
+                    vararg_i = vararg_i + 1
+                    carg = carg + 1
+    
+                args[fn.varargName] = Dict(vararg_kvs)
 
             new_env = fn.env
             new_env.append(args)
