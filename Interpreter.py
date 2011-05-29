@@ -1,4 +1,5 @@
 import re
+import inspect
 
 import Stream
 import Tokenizer
@@ -34,6 +35,57 @@ class Symbol(InAtom):
     @property
     def text(self):
         return self.__text
+
+class BuiltIn(InAtom):
+    def __init__(self,arg_names,vararg_name,vararg_minone,func):
+        assert(isinstance(arg_names,list))
+        assert(all(map(lambda x: isinstance(x,str),arg_names)))
+        assert(vararg_name == None or isinstance(vararg_name,str))
+        assert((vararg_name == None and vararg_minone == None) or \
+                vararg_name != None and isinstance(vararg_minone,bool))
+        assert(hasattr(func,'__call__'))
+
+        self.__arg_names = map(lambda x: str(x),arg_names)
+        self.__vararg_name = str(vararg_name) if vararg_name else None
+        self.__vararg_minone = vararg_minone
+        self.__func = func
+
+    def __str__(self):
+        return '[' + ' '.join(map(str,self.__arg_names)) + \
+                     (' ' if len(self.__arg_names) > 0 else '') + \
+                     (str(self.__vararg_name) + \
+                      ('+ ' if self.__vararg_minone else '* ') if self.__vararg_name else '') + \
+                     'BuiltIn "' + str(self.__func.__name) + '"]'
+
+    def __repr__(self):
+        return 'Interpreter.BuiltIn(' + repr(self.__arg_names) + ',' + repr(self.__vararg_name) + \
+                                        repr(self.__vararg_minone) + ',' + self.__func.__name + ')'
+
+    def __eq__(self,other):
+        return False
+
+    def clone(self):
+        return BuiltIn(self.__arg_names,self.__vararg_name,self.__vararg_minone,self.__func)
+
+    @property
+    def argNames(self):
+        return self.__arg_names
+
+    @property
+    def hasVararg(self):
+        return self.__vararg_name != None
+
+    @property
+    def varargName(self):
+        return self.__vararg_name
+
+    @property
+    def varargMinOne(self):
+        return self.__vararg_minone
+
+    @property
+    def func(self):
+        return self.__func
 
 class Func(InAtom):
     def __init__(self,arg_names,vararg_name,vararg_minone,body,env):
@@ -161,7 +213,7 @@ def interpret(atom,env):
 
         if isinstance(fn,Symbol):
             raise Exception('Cannot call a symbol!')
-        elif isinstance(fn,Func):
+        elif isinstance(fn,BuiltIn) or isinstance(fn,Func):
             args = dict([(name,None) for name in fn.argNames])
             total_arg_cnt = len(atom.namedArgs) + len(atom.orderArgs)
 
@@ -210,10 +262,13 @@ def interpret(atom,env):
     
                 args[fn.varargName] = Dict(vararg_kvs)
 
-            new_env = fn.env
-            new_env.append(args)
+            if isinstance(fn,BuiltIn):
+                return fn.func(args)
+            else:
+                new_env = fn.env
+                new_env.append(args)
 
-            return interpret(fn.body,new_env)
+                return interpret(fn.body,new_env)
         elif isinstance(fn,Dict):
             if len(atom.orderArgs) == 1 and len(atom.namedArgs) == 0:
                 ev_arg = interpret(atom.orderArgs[0],env)
@@ -269,8 +324,25 @@ def interpret(atom,env):
     else:
         raise Exception('Invalid atom!')
 
+def add(args):
+    if not isinstance(args['a'],Symbol):
+        raise Exception('Invalid argument for builtin "add"!')
+
+    if not isinstance(args['b'],Symbol):
+        raise Exception('Invalid argument for builtin "add"!')
+
+    try:
+        res = int(args['a'].text) + int(args['b'].text)
+    except ValueError,e:
+            raise Exception('Invalid argument for builtin "add"!')
+
+    return Symbol(str(res))
+
 def doit(program):
     a = Stream.Buffer(program)
     b = Tokenizer.tokenize(a)
     c = Parser.parse(b)
-    return interpret(c[1],[])
+
+    basic_env = {'add':BuiltIn(['a','b'],None,None,add)}
+
+    return interpret(c[1],[basic_env])
