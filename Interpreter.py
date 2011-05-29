@@ -15,18 +15,18 @@ class Symbol(InAtom):
 
     def __str__(self):
         if re.search('\s',self.__text):
-            return '{' + self.__text + '}'
+            return '`' + self.__text + '`'
         else:
             return self.__text
 
     def __repr__(self):
         return 'Interpreter.Symbol(' + repr(self.__text) + ')'
 
-    def __eq__(self,other):
-        if isinstance(other,Symbol):
-            return self.__text == other.__text
-        else:
+    def __eq__(self):
+        if not isinstance(other,Symbol):
             return False
+
+        return self.__text == other.__text
 
     def clone(self):
         return Symbol(self.__text)
@@ -41,40 +41,33 @@ class Func(InAtom):
         assert(all(map(lambda x: isinstance(x,str),arg_names)))
         assert(vararg_name == None or isinstance(vararg_name,str))
         assert((vararg_name == None and vararg_minone == None) or \
-               (vararg_name != None and isinstance(vararg_minone,bool)))
+                vararg_name != None and isinstance(vararg_minone,bool))
         assert(isinstance(body,Parser.PsAtom))
-        assert(isinstance(env,dict))
-        assert(all(map(lambda x: isinstance(x,str),env.keys())))
-        assert(all(map(lambda x: isinstance(x,InAtom),env.keys())))
+        assert(isinstance(env,list))
+        assert(all(map(lambda x: isinstance(x,dict),env)))
+        assert(all(map(lambda x: all(map(lambda y: isinstance(y,str),x.keys())),env)))
+        assert(all(map(lambda x: all(map(lambda y: isinstance(y,InAtom),x.values())),env)))
 
         self.__arg_names = map(lambda x: str(x),arg_names)
         self.__vararg_name = str(vararg_name) if vararg_name else None
         self.__vararg_minone = vararg_minone
         self.__body = body.clone()
-        self.__env = dict(env)
+        self.__env = map(lambda x: dict([(str(y),x[y].clone()) for y in x]),env)
 
     def __str__(self):
-        s_env = '{' + ','.join(map(lambda x: str(x) + ':' + str(self.__env[x]),
-                                   self.__env.keys())) + '}'
-
-        if self.__vararg_name:
-            return '[' + ' '.join(map(str,self.__arg_names)) + \
-                        (' ' if self.__arg_names != [] else '') + \
-                        str(self.__vararg_name) + ('+ ' if self.__vararg_minone else '* ') + \
-                        str(self.__body) + ' ' + s_env + ']'
-        else:
-            return '[' + ' '.join(map(str,self.__arg_names)) + \
-                        (' ' if self.__arg_names != [] else '') + \
-                        str(self.__body) + ' ' + s_env + ']'
+        return '[' + ' '.join(map(str,self.__arg_names)) + \
+                     (' ' if len(self.__arg_names) > 0 else '') + \
+                     (str(self.__vararg_name) + \
+                      ('+ ' if self.__vararg_minone else '* ') if self.__vararg_name else '') + \
+                     str(self.__body) + ']'
 
     def __repr__(self):
-        return 'Interpreter.Func(' + '[' + ','.join(map(repr,self.__arg_names)) + '],' + \
-                                     repr(self.__vararg_name) + ',' + \
-                                     repr(self.__vararg_minone) + ',' + \
-                                     repr(self.__body) + ',' + repr(self.__env) + ')'
+        return 'Interpreter.Func(' + repr(self.__arg_names) + ',' + repr(self.__vararg_name) + \
+                                     repr(self.__vararg_minone) + ',' + repr(self.__body) + \
+                                     repr(self.__env) + ')'
 
     def __eq__(self,other):
-        return False
+        return Flase
 
     def clone(self):
         return Func(self.__arg_names,self.__vararg_name,self.__vararg_minone,
@@ -104,64 +97,35 @@ class Func(InAtom):
     def env(self):
         return self.__env
 
-class DictKeyValue(object):
-    def __init__(self,key,value):
-        assert(isinstance(key,InAtom))
-        assert(isinstance(value,InAtom))
-
-        self.__key = key.clone()
-        self.__value = value.clone()
-
-    def __str__(self):
-        return str(self.__key) + ' ' + str(self.__value)
-
-    def __repr__(self):
-        return 'Interpreter.DictKeyValue(' + repr(self.__key) + ',' + \
-                                             repr(self.__value) + ')'
-
-    def __eq__(self,other):
-        if isinstance(other,DictKeyValue):
-            return self.__key == other.__key and \
-                   self.__value == other.__value
-        else:
-            return False
-
-    def clone(self):
-        return DictKeyValue(self.__key,self.__value)
-
-    @property
-    def key(self):
-        return self.__key
-
-    @property
-    def value(self):
-        return self.__value
-
 class Dict(InAtom):
     def __init__(self,keyvalues):
         assert(isinstance(keyvalues,list))
-        assert(all(map(lambda x: isinstance(x,DictKeyValue),keyvalues)))
+        assert(all(map(lambda x: isinstance(x,tuple),keyvalues)))
+        assert(all(map(lambda x: isinstance(x[0],InAtom),keyvalues)))
+        assert(all(map(lambda x: isinstance(x[1],InAtom),keyvalues)))
 
-        self.__keyvalues = map(lambda x: x.clone(),keyvalues)
+        self.__keyvalues = map(lambda x: (x[0].clone(),x[1].clone()),keyvalues)
 
     def __str__(self):
-        return '{' + ' '.join(map(str,self.__keyvalues)) + '}'
+        return '<' + ' '.join(map(lambda x: str(x[0]) + ' ' + str(x[1]),self.__keyvalues)) + '>'
 
     def __repr__(self):
-        return 'Parser.Dict(' + '[' + ','.join(map(repr,self.__keyvalues)) + '])'
+        return 'Interpreter.Dict(' + repr(self.__keyvalues) + ')'
 
     def __eq__(self,other):
-        if isinstance(other,Dict):
-            if len(self.__keyvalues) == len(other.__keyvalues):
-                for kv in self.__keyvalues:
-                    if kv not in other.__keyvalues:
-                        return False
-
-                return True
-            else:
-                return False
-        else:
+        if not isinstance(other,Dict):
             return False
+
+        if len(self.__keyvalues) != len(other.__keyvalues):
+            return False
+
+        search_dict = dict(other.__keyvalues)
+
+        for (key,value) in self.__keyvalues:
+            if key not in search_dict:
+                return False
+
+        return True
 
     def clone(self):
         return Dict(self.__keyvalues)
@@ -170,120 +134,76 @@ class Dict(InAtom):
     def keyvalues(self):
         return self.__keyvalues
 
-def interpret(atom,args,env):
+def interpret(atom,env):
     assert(isinstance(atom,Parser.PsAtom))
-    assert(isinstance(args,dict))
-    assert(all(map(lambda x: isinstance(x,str),args.keys())))
-    assert(all(map(lambda x: isinstance(x,InAtom),args.values())))
-    assert(isinstance(env,dict))
-    assert(all(map(lambda x: isinstance(x,str),env.keys())))
-    assert(all(map(lambda x: isinstance(x,InAtom),env.values())))
+    assert(isinstance(env,list))
+    assert(all(map(lambda x: isinstance(x,dict),env)))
+    assert(all(map(lambda x: all(map(lambda y: isinstance(y,str),x.keys())),env)))
+    assert(all(map(lambda x: all(map(lambda y: isinstance(y,InAtom),x.values())),env)))
 
     if isinstance(atom,Parser.Call):
-        fn = interpret(atom.action,args,env)
+        action = interpter(atom.action,env)
+
+        if isinstance(action,Symbol):
+            for one_env in reversed(env):
+                if action.text in one_env:
+                    fn = one_env[action.text]
+                    break
+            else:
+                raise Exception('Couldn\'t find name "' + action.text + '"!')
+        elif isinstance(action,Func):
+            fn = action
+        elif isinstance(action,Dict):
+            fn = action
+        else:
+            raise Exception('Now, this shouldn\'t really happen!')
 
         if isinstance(fn,Symbol):
-            if fn.text in args:
-                func = args[fn.text]
-            elif fn.text in env:
-                func = env[fn.text]
-            else:
-                raise Exception('Unknown function "' + fn.text + '"!')
-        elif isinstance(fn,Func):
-            func = fn
-        elif isinstance(fn,Dict):
-            func = fn
-        else:
             pass
+        elif isinstance(fn,Func):
+            pass
+        elif isinstance(fn,Dict):
+            pass
+        else:
+            raise Exception('This again, should not be the case!')
+    elif isinstance(atom,Parser.Lookup):
+        for one_env in reversed(env):
+            if atom.names[0].text in one_env:
+                return one_env[atom.names[0].text]
 
-        if isinstance(func,Symbol):
-            if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
-                return func
-            else:
-                raise Exception('Cannot apply symbol "' + func.text + '"!')
-        if isinstance(func,Func):
-            if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
-                return func
-            else:
-                new_args = dict([(name,None) for name in func.argNames])
-    
-                for nv in atom.namedArgs:
-                    name = interpret(nv.name,args,env)
-                    value = interpret(nv.value,args,env)
-    
-                    if not isinstance(name,Symbol):
-                        raise Exception('Named argument must be a Symbol!')
-    
-                    if name.text not in new_args:
-                        raise Exception('Invalid argument "' + name.text + '"!')
-    
-                    new_args[name.text] = value
-    
-                idx = 0
-    
-                for name in func.argNames:
-                    if new_args[name] == None:
-                        if idx < len(atom.orderArgs):
-                            value = interpret(atom.orderArgs[idx],args,env)
-                            new_args[name] = value
-                            idx = idx + 1
-                        else:
-                            raise Exception('Too few arguments in call to function!')
-    
-                # We have varargs
-                if idx < len(atom.orderArgs):
-                    raise Exception('Too many arguments in call to function!')
-    
-                return interpret(func.body,new_args,func.env)
-        if isinstance(func,Dict):
-            if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
-                return func
-            elif len(atom.orderArgs) == 1 and len(atom.namedArgs) == 0:
-                key = interpret(atom.orderArgs[0],args,env)
-
-                for kv in func.keyvalues:
-                    if key == kv.key:
-                        return kv.value
-
-                raise Exception('Cannot find key "' + key.text + '" in dictionary!')
-            else:
-                raise Exception('Invalid form of dictionary access!')
-
-        raise Exception('Should not be here!')
-    if isinstance(atom,Parser.Symbol):
+        raise Exception('Can\'t find name "' + atom.names[0].text + '"!')
+    elif isinstance(atom,Parser.Symbol):
         return Symbol(atom.text)
-    if isinstance(atom,Parser.Func):
+    elif isinstance(atom,Parser.Func):
         arg_names = []
         vararg_name = None
         vararg_minone = None
 
         for arg_name in atom.argNames:
-            name = interpret(arg_name,args,env)
+            name = interpret(arg_name,env)
 
             if not isinstance(name,Symbol):
-                raise Exception('Argument name can\'t be anyhting but Symbol!')
+                raise Exception('Argument name can\'t be anything but Symbol!')
 
             arg_names.append(name.text)
 
         if atom.hasVararg:
-            name = interpret(atom.varargName,args,env)
+            name = interpret(atom.varargName,env)
 
             if not isinstance(name,Symbol):
-                raise Exception('Argument name can\'t be anyhting but Symbol!')
+                raise Exception('Argument name can\'t be anything but Symbol!')
 
             vararg_name = name.text
             vararg_minone = atom.varargMinOne
 
         return Func(arg_names,vararg_name,vararg_minone,atom.body,env)
-    if isinstance(atom,Parser.Dict):
+    elif isinstance(atom,Parser.Dict):
         keyvalues = []
 
-        for kv in atom.keyvalues:
-            key = interpret(kv.key,args,env)
-            value = interpret(kv.value,args,env)
-
-            keyvalues.append(DictKeyValue(key,value))
+        for item in atom.keyvalues:
+            keyvalues.append((interpret(item.key,env),
+                              interpret(item.value,env)))
 
         return Dict(keyvalues)
-
-    raise Exception('Shouln\'t have gotten here!')
+    else:
+        raise Exception('Invalid atom!')
