@@ -37,17 +37,14 @@ class Symbol(InAtom):
         return self.__text
 
 class BuiltIn(InAtom):
-    def __init__(self,arg_names,vararg_name,vararg_minone,func):
-        assert(isinstance(arg_names,list))
-        assert(all(map(lambda x: isinstance(x,str),arg_names)))
-        assert(vararg_name == None or isinstance(vararg_name,str))
-        assert((vararg_name == None and vararg_minone == None) or \
-                vararg_name != None and isinstance(vararg_minone,bool))
+    def __init__(self,func):
         assert(hasattr(func,'__call__'))
 
-        self.__arg_names = map(lambda x: str(x),arg_names)
-        self.__vararg_name = str(vararg_name) if vararg_name else None
-        self.__vararg_minone = vararg_minone
+        arginfo = inspect.getargspec(func)
+
+        self.__arg_names = arginfo.args
+        self.__vararg_name = arginfo.varargs
+        self.__vararg_minone = False
         self.__func = func
 
     def __str__(self):
@@ -55,17 +52,17 @@ class BuiltIn(InAtom):
                      (' ' if len(self.__arg_names) > 0 else '') + \
                      (str(self.__vararg_name) + \
                       ('+ ' if self.__vararg_minone else '* ') if self.__vararg_name else '') + \
-                     'BuiltIn "' + str(self.__func.__name) + '"]'
+                     '<<BuiltIn "' + self.__func.__name__ + '">>]'
 
     def __repr__(self):
-        return 'Interpreter.BuiltIn(' + repr(self.__arg_names) + ',' + repr(self.__vararg_name) + \
-                                        repr(self.__vararg_minone) + ',' + self.__func.__name + ')'
+        fullname = inspect.getmodule(self.__func) + '.' + self.__func.__name__
+        return 'Interpreter.BuiltIn(' + fullname + ')'
 
     def __eq__(self,other):
         return False
 
     def clone(self):
-        return BuiltIn(self.__arg_names,self.__vararg_name,self.__vararg_minone,self.__func)
+        return BuiltIn(self.__func)
 
     @property
     def argNames(self):
@@ -267,25 +264,36 @@ def interpret(atom,env):
                     args[order_args] = interpret(atom.orderArgs[carg],env)
                     carg = carg + 1
 
-            if fn.hasVararg:
-                vararg_i = 0
-                vararg_cnt = total_arg_cnt - len(args)
-                vararg_kvs = [(Symbol('Length'),Symbol(str(vararg_cnt)))]
-    
-                while vararg_i < vararg_cnt:
-                    vararg_kvs.append((Symbol(str(vararg_i)),
-                                       interpret(atom.orderArgs[carg],env)))
-                    vararg_i = vararg_i + 1
-                    carg = carg + 1
-    
-                args[fn.varargName] = Dict(vararg_kvs)
-
             if isinstance(fn,BuiltIn):
-                return fn.func(**args)
+                inorder_args = [args[arg_name] for arg_name in fn.argNames]
+
+                if fn.hasVararg:
+                    vararg_i = 0
+                    vararg_cnt = total_arg_cnt - len(args)
+
+                    while vararg_i < vararg_cnt:
+                        inorder_args.append(interpret(atom.orderArgs[carg],env))
+                        vararg_i = vararg_i + 1
+                        carg = carg + 1
+
+                return fn.func(*inorder_args)
             else:
+                if fn.hasVararg:
+                    vararg_i = 0
+                    vararg_cnt = total_arg_cnt - len(args)
+                    vararg_kvs = [(Symbol('Length'),Symbol(str(vararg_cnt)))]
+        
+                    while vararg_i < vararg_cnt:
+                        vararg_kvs.append((Symbol(str(vararg_i)),
+                                           interpret(atom.orderArgs[carg],env)))
+                        vararg_i = vararg_i + 1
+                        carg = carg + 1
+        
+                    args[fn.varargName] = Dict(vararg_kvs)
+    
                 new_env = fn.env
                 new_env.append(args)
-
+    
                 return interpret(fn.body,new_env)
         elif isinstance(fn,Dict):
             if len(atom.orderArgs) == 1 and len(atom.namedArgs) == 0:
@@ -335,29 +343,3 @@ def interpret(atom,env):
         return Dict(keyvalues)
     else:
         raise Exception('Invalid atom!')
-
-def add(a,b,va):
-    if not isinstance(a,Symbol):
-        raise Exception('Invalid argument for builtin "add"!')
-
-    if not isinstance(a,Symbol):
-        raise Exception('Invalid argument for builtin "add"!')
-
-    try:
-        res = int(a.text) + int(b.text)
-
-        for i in range(0,int(va.lookupS('Length').text)):
-            res = res + int(va.lookupS(str(i)).text)
-    except ValueError,e:
-            raise Exception('Invalid argument for builtin "add"!')
-
-    return Symbol(str(res))
-
-def doit(program):
-    a = Stream.Buffer(program)
-    b = Tokenizer.tokenize(a)
-    c = Parser.parse(b)
-
-    basic_env = {'add':BuiltIn(['a','b'],'va',False,add)}
-
-    return interpret(c[1],[basic_env])
