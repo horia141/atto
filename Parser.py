@@ -85,26 +85,25 @@ class Call(PsAtom):
         return self.__named_args
 
 class Lookup(PsAtom):
-    def __init__(self,names,geometry):
-        assert(isinstance(names,list))
-        assert(all(map(lambda x: isinstance(x,PsAtom),names)))
+    def __init__(self,name,geometry):
+        assert(isinstance(name,PsAtom))
 
         super(Lookup,self).__init__(geometry)
 
-        self.__names = map(lambda x: x.clone(),names)
+        self.__name = name.clone()
 
     def __str__(self):
-        return ':' +  ':'.join(map(str,self.__names))
+        return ':' +  str(self.__name)
 
     def __repr__(self):
-        return 'Parser.Lookup(' + '[' + ','.join(map(repr,self.__names)) + '])'
+        return 'Parser.Lookup(' + repr(self.__name) + ')'
 
     def clone(self):
-        return Lookup(self.__names,self.geometry)
+        return Lookup(self.__name,self.geometry)
 
     @property
-    def names(self):
-        return self.__names
+    def name(self):
+        return self.__name
 
 class Symbol(PsAtom):
     def __init__(self,text,geometry):
@@ -265,19 +264,9 @@ def parse(tokens,pos=0):
         return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
     elif isinstance(tokens[pos],Tokenizer.Lookup):
         init_geometry = tokens[pos].geometry
-        names = []
-
-        while pos+1 < len(tokens) and \
-              isinstance(tokens[pos],Tokenizer.Lookup) and \
-              not isinstance(tokens[pos+1],Tokenizer.Lookup):
-            (pos,current_name) = parse(tokens,pos+1)
-            names.append(current_name)
-
-        if len(names) == 0:
-            raise Exception('Invalid lookup syntax!')
-
-        geometry = init_geometry.expandTo(tokens[pos-1].geometry)
-        return (pos,Lookup(names,geometry))
+        (pos,name) = parse(tokens,pos+1)
+        geometry = init_geometry.expandTo(name.geometry)
+        return (pos,Lookup(name,geometry))
     elif isinstance(tokens[pos],Tokenizer.Symbol):
         return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
     elif isinstance(tokens[pos],Tokenizer.BlockBeg):

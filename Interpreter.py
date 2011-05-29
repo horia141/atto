@@ -22,7 +22,7 @@ class Symbol(InAtom):
     def __repr__(self):
         return 'Interpreter.Symbol(' + repr(self.__text) + ')'
 
-    def __eq__(self):
+    def __eq__(self,other):
         if not isinstance(other,Symbol):
             return False
 
@@ -67,7 +67,7 @@ class Func(InAtom):
                                      repr(self.__env) + ')'
 
     def __eq__(self,other):
-        return Flase
+        return False
 
     def clone(self):
         return Func(self.__arg_names,self.__vararg_name,self.__vararg_minone,
@@ -119,10 +119,11 @@ class Dict(InAtom):
         if len(self.__keyvalues) != len(other.__keyvalues):
             return False
 
-        search_dict = dict(other.__keyvalues)
-
         for (key,value) in self.__keyvalues:
-            if key not in search_dict:
+            for (okey,ovalue) in self.__keyvalues:
+                if key == okey:
+                    break
+            else:
                 return False
 
         return True
@@ -142,7 +143,7 @@ def interpret(atom,env):
     assert(all(map(lambda x: all(map(lambda y: isinstance(y,InAtom),x.values())),env)))
 
     if isinstance(atom,Parser.Call):
-        action = interpter(atom.action,env)
+        action = interpret(atom.action,env)
 
         if isinstance(action,Symbol):
             for one_env in reversed(env):
@@ -159,19 +160,57 @@ def interpret(atom,env):
             raise Exception('Now, this shouldn\'t really happen!')
 
         if isinstance(fn,Symbol):
-            pass
+            raise Exception('Cannot call a symbol!')
         elif isinstance(fn,Func):
-            pass
+            args = dict([(name,None) for name in fn.argNames])
+
+            if len(args) != len(atom.namedArgs) + len(atom.orderArgs):
+                raise Exception('Invalid number of arguments!')
+
+            for named_arg in atom.namedArgs:
+                named_name = interpret(named_arg.name,env)
+
+                if not isinstance(named_name,Symbol):
+                    raise Exception('Invalid argument name type!')
+
+                if named_name.text not in args:
+                    raise Exception('Invalid argument name "' + named_name.text + '"!')
+
+                if args[named_name.text] != None:
+                    raise Exception('Argument "' + named_name.text + '" was specified twice!')
+
+                args[named_name.text] = interpret(named_arg.value,env)
+
+            carg = 0
+
+            for order_args in fn.argNames:
+                if args[order_args] == None:
+                    args[order_args] = interpret(atom.orderArgs[carg],env)
+                    carg = carg + 1
+
+            new_env = fn.env
+            new_env.append(args)
+
+            return interpret(fn.body,new_env)
         elif isinstance(fn,Dict):
-            pass
+            if len(atom.orderArgs) == 1 and len(atom.namedArgs) == 0:
+                ev_arg = interpret(atom.orderArgs[0],env)
+
+                for (key,value) in fn.keyvalues:
+                    if ev_arg == key:
+                        return value
+
+                raise Exception('Cannot find key "' + str(atom.orderArgs[0]) + '"!')
+            else:
+                raise Exception('Invalid syntax for dictionary lookup!')
         else:
             raise Exception('This again, should not be the case!')
     elif isinstance(atom,Parser.Lookup):
         for one_env in reversed(env):
-            if atom.names[0].text in one_env:
-                return one_env[atom.names[0].text]
+            if atom.name.text in one_env:
+                return one_env[atom.name.text]
 
-        raise Exception('Can\'t find name "' + atom.names[0].text + '"!')
+        raise Exception('Can\'t find name "' + atom.name.text + '"!')
     elif isinstance(atom,Parser.Symbol):
         return Symbol(atom.text)
     elif isinstance(atom,Parser.Func):
@@ -207,3 +246,9 @@ def interpret(atom,env):
         return Dict(keyvalues)
     else:
         raise Exception('Invalid atom!')
+
+def doit(program):
+    a = Stream.Buffer(program)
+    b = Tokenizer.tokenize(a)
+    c = Parser.parse(b)
+    return interpret(c[1],[])
