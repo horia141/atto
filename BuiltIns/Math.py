@@ -1,11 +1,11 @@
 import Interpreter
+import BuiltIns.Utils
+from BuiltIns.Utils import checkNumber
 
 def Add(a,b,*va):
-    if not isinstance(a,Interpreter.Symbol):
-        raise Exception('Invalid argument for builtin "add"!')
-
-    if not isinstance(a,Interpreter.Symbol):
-        raise Exception('Invalid argument for builtin "add"!')
+    checkNumber(a)
+    checkNumber(b)
+    map(checkNumber,va)
 
     try:
         res = int(a.text) + int(b.text)
