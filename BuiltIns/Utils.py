@@ -1,30 +1,30 @@
+import numbers
+
 import Interpreter
 
-def checkSymbol(obj):
-    if not isinstance(obj,Interpreter.Symbol):
-        raise Exception('Excepected symbol!')
+def makeString(string):
+    assert(isinstance(string,str))
 
-def checkNumber(obj):
-    checkSymbol(obj)
+    return Interpreter.Symbol(str)
+
+def getString(obj):
+    assert(isinstance(obj,Interpreter.InAtom))
+
+    if not isinstance(obj,Interpreter.Symbol):
+        raise Exception('Expected symbol!')
+
+    return obj.text
+
+def makeNumber(number):
+    assert(isinstance(number,numbers.Number))
+
+    return Interpreter.Symbol(str(number))
+
+def getNumber(obj):
+    if not isinstance(obj,Interpreter.Symbol):
+        raise Exception('Expected symbol!')
 
     try:
-        int(obj.text)
+        return float(obj.text)
     except ValueError,e:
         raise Exception('Expected number!')
-
-def checkFunc(obj):
-    if not isinstance(obj,Interpreter.Func):
-        raise Exception('Excepected function!')
-
-def checkThunk(obj):
-    checkFunc(obj)
-
-    if not len(obj.argNames) == 0 or obj.hasVararg:
-        raise Exception('Expected a thunk!')
-
-def checkDict(obj):
-    if not isinstance(obj,Interpreter.Dict):
-        raise Exception('Excepected function!')
-
-def checkVarargArray(obj):
-    pass

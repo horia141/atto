@@ -1,18 +1,26 @@
 import Interpreter
 import BuiltIns.Utils
-from BuiltIns.Utils import checkNumber
+from BuiltIns.Utils import makeNumber
+from BuiltIns.Utils import getNumber
 
 def Add(a,b,*va):
-    checkNumber(a)
-    checkNumber(b)
-    map(checkNumber,va)
+    a = getNumber(a)
+    b = getNumber(b)
 
-    try:
-        res = int(a.text) + int(b.text)
+    res = a + b
 
-        for i in range(0,len(va)):
-            res = res + int(va[i].text)
-    except ValueError,e:
-            raise Exception('Invalid argument for builtin "add"!')
+    for i in va:
+        res = res + getNumber(i)
 
-    return Interpreter.Symbol(str(res))
+    return makeNumber(res)
+
+def Sub(a,b,*va):
+    a = getNumber(a)
+    b = getNumber(b)
+
+    res = a - b
+
+    for i in va:
+        res = res - getNumber(i)
+
+    return makeNumber(res)
