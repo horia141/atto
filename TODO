@@ -1,0 +1,30 @@
+* [30.05.2011-xx.xx.xxxx] 
+  Fix syntax issues with '=',':','+','*'. We should treat '+' and '*' as
+  normal symbols and let them be part of other symbols. If in the argument
+  list of a function, we find at the end of the last argument either '+' or
+  '*' we interpret it as a vararg. We won't treat '+' and '*' as separate
+  lexemes though. '=' and ':' won't be treated as symbols anymore though and
+  they will have to have just a fixed meaning.
+
+* [30.05.2011-xx.xx.xxxx]
+  Add default arguments for functions. The form should be:
+
+    que := [x y=20 (+ :x :y)]
+
+  This would produce
+
+    (que 10 30) => 40
+    (que 10) => 30
+    (que y=30) => Exception ...
+
+* [30.05.2011-xx.xx.xxxx]
+  Make auto-argument parsing when executing a script. We define a boot
+  function and, depending on its arguments, generate appropriate getopt
+  calls.
+
+   que := [x y=30 debug (...)]
+
+  Then, assuming we have to invoke "atto" as the interpreter command,
+  we'd get:
+
+   ./atto -boot=que -x 30 -y 100
