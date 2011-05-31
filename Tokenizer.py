@@ -45,33 +45,54 @@ class CallEqual(TkAtom):
     def __repr__(self):
         return 'Tokenizer.CallEqual(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class Lookup(TkAtom):
+class CallDollar(TkAtom):
     def __str__(self):
-        return 'Lookup'
+        return 'CallDollar'
+
+    def __repr__(self):
+        return 'Tokenizer.CallDollar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
+class LookupSep(TkAtom):
+    def __str__(self):
+        return 'LookupSep'
 
     def __repr__(self):
         return 'Tokenizer.Lookup(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
+class Boolean(TkAtom):
+    def __str__(self):
+        return 'Boolean "' + self.text + '"'
+
+    def __repr__(self):
+        return 'Tokenizer.Boolean(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
+class Number(TkAtom):
+    def __str__(self):
+        return 'Number "' + self.text + '"'
+
+    def __repr__(self):
+        return 'Tokenizer.Number(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
 class Symbol(TkAtom):
     def __str__(self):
-        return 'Symbol \'' + self.text + '\''
+        return 'Symbol "' + self.text + '"'
 
     def __repr__(self):
         return 'Tokenizer.Symbol(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class BlockBeg(TkAtom):
+class String(TkAtom):
     def __str__(self):
-        return 'BlockBeg'
+        return 'String "' + self.text + '"'
 
     def __repr__(self):
-        return 'Tokenizer.BlockBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.String(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class BlockEnd(TkAtom):
+class StringEval(TkAtom):
     def __str__(self):
-        return 'BlockEnd'
+        return 'StringEval "' + self.text + '"'
 
     def __repr__(self):
-        return 'Tokenizer.BlockEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.StringEval(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class FuncBeg(TkAtom):
     def __str__(self):
@@ -101,6 +122,20 @@ class FuncPlus(TkAtom):
     def __repr__(self):
         return 'Tokenizer.FuncPlus(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
+class BlockBeg(TkAtom):
+    def __str__(self):
+        return 'BlockBeg'
+
+    def __repr__(self):
+        return 'Tokenizer.BlockBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
+class BlockEnd(TkAtom):
+    def __str__(self):
+        return 'BlockEnd'
+
+    def __repr__(self):
+        return 'Tokenizer.BlockEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
 class DictBeg(TkAtom):
     def __str__(self):
         return 'DictBeg'
@@ -115,6 +150,13 @@ class DictEnd(TkAtom):
     def __repr__(self):
         return 'Tokenizer.DictEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
+class DictBar(TkAtom):
+    def __str__(self):
+        return 'DictBar'
+
+    def __repr__(self):
+        return 'Tokenizer.DictBar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
 def tokenize(stream):
     assert(isinstance(stream,Stream.Buffer))
 
@@ -124,17 +166,22 @@ def tokenize(stream):
     parsers = [(CallBeg,re.compile(r'[(]'),0),
                (CallEnd,re.compile(r'[)]'),0),
                (CallEqual,re.compile(r'[=]'),0),
-               (Lookup,re.compile(r'[:]'),0),
-               (Symbol,re.compile(r'[a-zA-Z0-9~!@#$%^&_\-;"\'|\\,.?/]+'),0),
-               (Symbol,re.compile(r'[`]([^`]+)[`]'),1),
-               (BlockBeg,re.compile(r'[{]'),0),
-               (BlockEnd,re.compile(r'[}]'),0),
+               (CallDollar,re.compile(r'[$]'),0),
+               (LookupSep,re.compile(r'[:]'),0),
+               (Boolean,re.compile(r'#T|#F'),0),
+               (Number,re.compile(r'[0-9]+'),0),
+               (Symbol,re.compile(r'[a-zA-Z_][a-zA-Z0-9-_]*'),0),
+               (String,re.compile(r'[\']([^\']*)[\']'),1),
+               (StringEval,re.compile(r'[`]([^`]*)[`]'),1),
                (FuncBeg,re.compile(r'[[]'),0),
                (FuncEnd,re.compile(r'[]]'),0),
                (FuncStar,re.compile(r'[*]'),0),
                (FuncPlus,re.compile(r'[+]'),0),
+               (BlockBeg,re.compile(r'[{]'),0),
+               (BlockEnd,re.compile(r'[}]'),0),
                (DictBeg,re.compile(r'[<]'),0),
                (DictEnd,re.compile(r'[>]'),0),
+               (DictBar,re.compile(r'[|]'),0),
                (None,re.compile(r'\s+'),0)]
 
     while not local_stream.finished:
