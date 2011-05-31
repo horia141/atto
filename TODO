@@ -28,3 +28,9 @@
   we'd get:
 
    ./atto -boot=que -x 30 -y 100
+
+* [01.06.2011-xx.xx.xxxx]
+  In "Interpreter.interpret", if we evaluate a function and the type of
+  its body is not "Parser.Call" - that is, it is an data type, we evaluate
+  the object as well. We'll need to upgrade the definition of an "Func",
+  but we'll get a nice speed bonus for constructors and the like.

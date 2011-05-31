@@ -10,7 +10,7 @@ def doit(program):
     b = Tokenizer.tokenize(a)
     c = Parser.parse(b)
 
-    basic_env = {'+':Interpreter.BuiltIn(BuiltIns.Math.Add),
-                 '-':Interpreter.BuiltIn(BuiltIns.Math.Sub)}
+    basic_env = {'add':Interpreter.BuiltIn(BuiltIns.Math.Add),
+                 'sub':Interpreter.BuiltIn(BuiltIns.Math.Sub)}
 
-    return Interpreter.interpret(c[1],[basic_env])
+    return Interpreter.interpret(c[1],[basic_env],None)
