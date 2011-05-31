@@ -46,7 +46,8 @@ class CallNamedArg(object):
 
 class Call(PsAtom):
     def __init__(self,action,order_args,named_args,geometry):
-        assert(isinstance(action,PsAtom))
+        assert(isinstance(action,list))
+        assert(all(map(lambda x: isinstance(x,PsAtom),action)))
         assert(isinstance(order_args,list))
         assert(all(map(lambda x: isinstance(x,PsAtom),order_args)))
         assert(isinstance(named_args,list))
@@ -54,20 +55,20 @@ class Call(PsAtom):
 
         super(Call,self).__init__(geometry)
 
-        self.__action = action.clone()
+        self.__action = map(lambda x: x.clone(),action)
         self.__order_args = map(lambda x: x.clone(),order_args)
         self.__named_args = map(lambda x: x.clone(),named_args)
 
     def __str__(self):
-        return '(' + str(self.__action) + \
+        return '(' + ':'.join(map(str,self.__action)) + \
                 (' ' + ' '.join(map(str,self.__order_args)) if self.__order_args else '') + \
                 (' ' + ' '.join(map(str,self.__named_args)) if self.__named_args else '') + ')'
 
     def __repr__(self):
         return 'Parser.Call(' + repr(self.__action) + ',' + \
-                         '[' + ','.join(map(repr,self.__order_args)) + '],' + \
-                         '[' + ','.join(map(repr,self.__named_args)) + '],' + \
-                         repr(self.geometry) + ')'
+                           '[' + ','.join(map(repr,self.__order_args)) + '],' + \
+                           '[' + ','.join(map(repr,self.__named_args)) + '],' + \
+                           repr(self.geometry) + ')'
 
     def clone(self):
         return Call(self.__action,self.__order_args,self.__named_args,self.geometry)
@@ -84,26 +85,47 @@ class Call(PsAtom):
     def namedArgs(self):
         return self.__named_args
 
-class Lookup(PsAtom):
-    def __init__(self,name,geometry):
-        assert(isinstance(name,PsAtom))
+class Boolean(PsAtom):
+    def __init__(self,text,geometry):
+        assert(isinstance(text,str))
+        
+        super(Boolean,self).__init__(geometry)
 
-        super(Lookup,self).__init__(geometry)
-
-        self.__name = name.clone()
+        self.__text = str(text)
 
     def __str__(self):
-        return ':' +  str(self.__name)
+        return self.__text
 
     def __repr__(self):
-        return 'Parser.Lookup(' + repr(self.__name) + ')'
+        return 'Parser.Boolean(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
 
     def clone(self):
-        return Lookup(self.__name,self.geometry)
+        return Boolean(self.__text,self.geometry)
 
     @property
-    def name(self):
-        return self.__name
+    def text(self):
+        return self.__text
+
+class Number(PsAtom):
+    def __init__(self,text,geometry):
+        assert(isinstance(text,str))
+        
+        super(Number,self).__init__(geometry)
+
+        self.__text = str(text)
+
+    def __str__(self):
+        return self.__text
+
+    def __repr__(self):
+        return 'Parser.Number(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
+
+    def clone(self):
+        return Number(self.__text,self.geometry)
+
+    @property
+    def text(self):
+        return self.__text
 
 class Symbol(PsAtom):
     def __init__(self,text,geometry):
@@ -114,16 +136,76 @@ class Symbol(PsAtom):
         self.__text = str(text)
 
     def __str__(self):
-        if re.search('\s',self.__text):
-            return '`' + self.__text + '`'
-        else:
-            return self.__text
+        return self.__text
 
     def __repr__(self):
         return 'Parser.Symbol(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
 
     def clone(self):
         return Symbol(self.__text,self.geometry)
+
+    @property
+    def text(self):
+        return self.__text
+
+class String(PsAtom):
+    def __init__(self,text,geometry):
+        assert(isinstance(text,str))
+
+        super(String,self).__init__(geometry)
+
+        self.__text = str(text)
+
+    def __str__(self):
+        return '\'' + self.__text + '\''
+
+    def __repr__(self):
+        return 'Parser.String(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
+
+    def clone(self):
+        return String(self.__text,self.geometry)
+
+    @property
+    def text(self):
+        return self.__text
+
+class StringEval(PsAtom):
+    def __init__(self,text,geometry):
+        assert(isinstance(text,str))
+
+        super(StringEval,self).__init__(geometry)
+
+        self.__text = str(text)
+
+    def __str__(self):
+        return '`' + self.__text + '`'
+
+    def __repr__(self):
+        return 'Parser.StringEval(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
+
+    def clone(self):
+        return Symbol(self.__text,self.geometry)
+
+    @property
+    def text(self):
+        return self.__text
+
+class FuncSelf(PsAtom):
+    def __init__(self,text,geometry):
+        assert(isinstance(text,str))
+        
+        super(FuncSelf,self).__init__(geometry)
+
+        self.__text = str(text)
+
+    def __str__(self):
+        return self.__text
+
+    def __repr__(self):
+        return 'Parser.FuncSelf(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
+
+    def clone(self):
+        return FuncSelf(self.__text,self.geometry)
 
     @property
     def text(self):
@@ -186,47 +268,22 @@ class Func(PsAtom):
     def body(self):
         return self.__body
 
-class DictKeyValue(object):
-    def __init__(self,key,value):
-        assert(isinstance(key,PsAtom))
-        assert(isinstance(value,PsAtom))
-
-        self.__key = key.clone()
-        self.__value = value.clone()
-
-    def __str__(self):
-        return str(self.__key) + ' ' + str(self.__value)
-
-    def __repr__(self):
-        return 'Parser.DictKeyValue(' + repr(self.__key) + ',' + \
-                                        repr(self.__value) + ')'
-
-    def clone(self):
-        return DictKeyValue(self.__key,self.__value)
-
-    @property
-    def key(self):
-        return self.__key
-
-    @property
-    def value(self):
-        return self.__value
-
 class Dict(PsAtom):
     def __init__(self,keyvalues,geometry):
         assert(isinstance(keyvalues,list))
-        assert(all(map(lambda x: isinstance(x,DictKeyValue),keyvalues)))
+        assert(all(map(lambda x: isinstance(x,tuple),keyvalues)))
+        assert(all(map(lambda x: isinstance(x[0],PsAtom),keyvalues)))
+        assert(all(map(lambda x: isinstance(x[1],PsAtom),keyvalues)))
 
         super(Dict,self).__init__(geometry)
 
-        self.__keyvalues = map(lambda x: x.clone(),keyvalues)
+        self.__keyvalues = map(lambda x: (x[0].clone(),x[1].clone()),keyvalues)
 
     def __str__(self):
-        return '<' + ' '.join(map(str,self.__keyvalues)) + '>'
+        return '<' + ' '.join(map(lambda x: str(x[0]) + ' ' + str(x[1]),self.__keyvalues)) + '>'
 
     def __repr__(self):
-        return 'Parser.Dict(' + '[' + ','.join(map(repr,self.__keyvalues)) + '],' + \
-                                      repr(self.geometry) + ')'
+        return 'Parser.Dict(' + repr(self.__keyvalues) + ',' + repr(self.geometry) + ')'
 
     def clone(self):
         return Dict(self.__keyvalues,self.geometry)
@@ -241,107 +298,150 @@ def parse(tokens,pos=0):
     assert(isinstance(pos,int))
     assert(pos < len(tokens))
 
-    if isinstance(tokens[pos],Tokenizer.CallBeg):
-        init_geometry = tokens[pos].geometry
-        (pos,action) = parse(tokens,pos+1)
-        order_args = []
-        named_args = []
+    full_geometry = tokens[pos].geometry
+    values = []
 
-        while not isinstance(tokens[pos],Tokenizer.CallEnd):
-            (pos,new_arg) = parse(tokens,pos)
-
-            if isinstance(tokens[pos],Tokenizer.CallEqual):
-                (pos,value) = parse(tokens,pos+1)
-                named_args.append(CallNamedArg(new_arg,value))
-            else:
-                order_args.append(new_arg)
-
-        geometry = init_geometry.expandTo(tokens[pos].geometry)
-        return (pos+1,Call(action,order_args,named_args,geometry))
-    elif isinstance(tokens[pos],Tokenizer.CallEnd):
-        raise Exception('Invalid ")" character!')
-    elif isinstance(tokens[pos],Tokenizer.CallEqual):
-        return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
-    elif isinstance(tokens[pos],Tokenizer.Lookup):
-        init_geometry = tokens[pos].geometry
-        (pos,name) = parse(tokens,pos+1)
-        geometry = init_geometry.expandTo(name.geometry)
-        return (pos,Lookup(name,geometry))
-    elif isinstance(tokens[pos],Tokenizer.Symbol):
-        return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
-    elif isinstance(tokens[pos],Tokenizer.BlockBeg):
-        init_geometry = tokens[pos].geometry
-        (pos,action) = parse(tokens,pos+1)
-        order_args = []
-        named_args = []
-
-        while not isinstance(tokens[pos],Tokenizer.BlockEnd):
-            (pos,new_arg) = parse(tokens,pos)
-
-            if isinstance(tokens[pos],Tokenizer.CallEqual):
-                (pos,value) = parse(tokens,pos+1)
-                named_args.append(CallNamedArg(new_arg,value))
-            else:
-                order_args.append(new_arg)
-
-        geometry = init_geometry.expandTo(tokens[pos].geometry)
-        body = Call(action,order_args,named_args,geometry)
-        return (pos+1,Func([],None,None,body,geometry))
-    elif isinstance(tokens[pos],Tokenizer.BlockEnd):
-        raise Exception('Invalid "}" character!')
-    elif isinstance(tokens[pos],Tokenizer.FuncBeg):
-        init_geometry = tokens[pos].geometry
-        pos = pos + 1
-        contents = []
-        vararg_name = None
-        vararg_minone = None
-
-        while not isinstance(tokens[pos],Tokenizer.FuncEnd):
-            (pos,new_item) = parse(tokens,pos)
-
-            if isinstance(tokens[pos],Tokenizer.FuncStar) or \
-               isinstance(tokens[pos],Tokenizer.FuncPlus):
-                vararg_name = new_item
-
-                if isinstance(tokens[pos],Tokenizer.FuncStar):
-                    vararg_minone = False
+    while True:
+        if isinstance(tokens[pos],Tokenizer.CallBeg):
+            init_geometry = tokens[pos].geometry
+            (pos,init_action) = parse(tokens,pos+1)
+            action = [init_action]
+            order_args = []
+            named_args = []
+    
+            while isinstance(tokens[pos],Tokenizer.CallLookupSep):
+                (pos,next_action) = parse(tokens,pos+1)
+                action.append(next_action)
+    
+            while not isinstance(tokens[pos],Tokenizer.CallEnd):
+                (pos,new_arg) = parse(tokens,pos)
+    
+                if isinstance(tokens[pos],Tokenizer.CallEqual):
+                    (pos,value) = parse(tokens,pos+1)
+                    named_args.append(CallNamedArg(new_arg,value))
                 else:
-                    vararg_minone = True
+                    order_args.append(new_arg)
+    
+            geometry = init_geometry.expandTo(tokens[pos].geometry)
+            values.append(Call(action,order_args,named_args,geometry))
+        elif isinstance(tokens[pos],Tokenizer.CallEnd):
+            raise Exception('Invalid ")" character!')
+        elif isinstance(tokens[pos],Tokenizer.CallEqual):
+            raise Exception('Invalid "=" character!')
+        elif isinstance(tokens[pos],Tokenizer.CallDollar):
+            values.append(FuncSelf(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.CallLookupSep):
+            raise Exception('Invalid ":" character!')
+        elif isinstance(tokens[pos],Tokenizer.Boolean):
+            values.append(Boolean(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.Number):
+            values.append(Number(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.Symbol):
+            values.append(Symbol(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.String):
+            values.append(String(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.StringEval):
+            values.append(StringEval(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.FuncBeg):
+            init_geometry = tokens[pos].geometry
+            pos = pos + 1
+            contents = []
+            vararg_name = None
+            vararg_minone = None
+    
+            while not isinstance(tokens[pos],Tokenizer.FuncEnd):
+                (pos,new_item) = parse(tokens,pos)
+    
+                if isinstance(tokens[pos],Tokenizer.FuncStar) or \
+                   isinstance(tokens[pos],Tokenizer.FuncPlus):
+                    vararg_name = new_item
+    
+                    if isinstance(tokens[pos],Tokenizer.FuncStar):
+                        vararg_minone = False
+                    else:
+                        vararg_minone = True
+    
+                    pos = pos + 1
+                    (pos,body) = parse(tokens,pos)
+                    contents.append(body)
+    
+                    if not isinstance(tokens[pos],Tokenizer.FuncEnd):
+                        raise Exception('Invalid function syntax #2!')
+                else:
+                    contents.append(new_item)
+    
+            if len(contents) == 0:
+                raise Exception('Invalid function syntax!')
+    
+            geometry = init_geometry.expandTo(tokens[pos].geometry)
+            values.append(Func(contents[:-1],vararg_name,vararg_minone,contents[-1],geometry))
+        elif isinstance(tokens[pos],Tokenizer.FuncEnd):
+            raise Exception('Invalid "]" character!')
+        elif isinstance(tokens[pos],Tokenizer.FuncStar):
+            raise Exception('Invalid "*" character!')
+        elif isinstance(tokens[pos],Tokenizer.FuncPlus):
+            raise Exception('Invalid "+" character!')
+        elif isinstance(tokens[pos],Tokenizer.BlockBeg):
+            init_geometry = tokens[pos].geometry
+            (pos,init_action) = parse(tokens,pos+1)
+            action = [init_action]
+            order_args = []
+            named_args = []
+    
+            while isinstance(tokens[pos],Tokenizer.CallLookupSep):
+                (pos,next_action) = parse(tokens,pos+1)
+                action.append(next_action)
+    
+            while not isinstance(tokens[pos],Tokenizer.BlockEnd):
+                (pos,new_arg) = parse(tokens,pos)
+    
+                if isinstance(tokens[pos],Tokenizer.CallEqual):
+                    (pos,value) = parse(tokens,pos+1)
+                    named_args.append(CallNamedArg(new_arg,value))
+                else:
+                    order_args.append(new_arg)
+    
+            geometry = init_geometry.expandTo(tokens[pos].geometry)
+            body = Call(action,order_args,named_args,geometry)
+            values.append(Func([],None,None,body,geometry))
+        elif isinstance(tokens[pos],Tokenizer.BlockEnd):
+            raise Exception('Invalid "}" character!')
+        elif isinstance(tokens[pos],Tokenizer.DictBeg):
+            init_geometry = tokens[pos].geometry
+            pos = pos+1
+            keyvalues = []
+    
+            while not isinstance(tokens[pos],Tokenizer.DictEnd):
+                (pos,key) = parse(tokens,pos)
+                (pos,value) = parse(tokens,pos)
+    
+                keyvalues.append((key,value))
+    
+            geometry = init_geometry.expandTo(tokens[pos].geometry)
+            values.append(Dict(keyvalues,geometry))
+        elif isinstance(tokens[pos],Tokenizer.DictEnd):
+            raise Exception('Invalid ">" character!')
+        elif isinstance(tokens[pos],Tokenizer.DictBar):
+            raise Exception('Invalid "|" character!')
+        else:
+            raise Exception('Invalid syntax!')
 
-                pos = pos + 1
-                (pos,body) = parse(tokens,pos)
-                contents.append(body)
+        pos = pos + 1
 
-                if not isinstance(tokens[pos],Tokenizer.FuncEnd):
-                    raise Exception('Invalid function syntax #2!')
-            else:
-                contents.append(new_item)
+        if pos < len(tokens) and isinstance(tokens[pos],Tokenizer.DictBar):
+            pos = pos + 1
+        else:
+            break
 
-        if len(contents) == 0:
-            raise Exception('Invalid function syntax!')
-
-        geometry = init_geometry.expandTo(tokens[pos].geometry)
-        return (pos+1,Func(contents[:-1],vararg_name,vararg_minone,contents[-1],geometry))
-    elif isinstance(tokens[pos],Tokenizer.FuncEnd):
-        raise Exception('Invalid "]" character!')
-    elif isinstance(tokens[pos],Tokenizer.FuncStar):
-        return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
-    elif isinstance(tokens[pos],Tokenizer.FuncPlus):
-        return (pos+1,Symbol(tokens[pos].text,tokens[pos].geometry))
-    elif isinstance(tokens[pos],Tokenizer.DictBeg):
-        init_geometry = tokens[pos].geometry
-        pos = pos+1
-        keyvalues = []
-
-        while not isinstance(tokens[pos],Tokenizer.DictEnd):
-            (pos,key) = parse(tokens,pos)
-            (pos,value) = parse(tokens,pos)
-
-            keyvalues.append(DictKeyValue(key,value))
-
-        geometry = init_geometry.expandTo(tokens[pos].geometry)
-        return (pos+1,Dict(keyvalues,geometry))
-    elif isinstance(tokens[pos],Tokenizer.DictEnd):
-        raise Exception('Invalid ">" character!')
+    if len(values) == 1:
+        return (pos,values[0])
     else:
-        raise Exception('Invalid syntax!')
+        no_geom = Stream.Geometry(0,Stream.RelPos(0,0),0,Stream.RelPos(0,0))
+        build_kvs = [(Symbol('Length',no_geom),
+                      Number(str(len(values)),no_geom))]
+
+        for i in range(0,len(values)):
+            build_kvs.append((Number(str(i),no_geom),values[i]))
+
+        geometry = full_geometry.expandTo(tokens[pos-1].geometry)
+        return (pos,Dict(build_kvs,geometry))
