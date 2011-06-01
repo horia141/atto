@@ -1,0 +1,11 @@
+* Values everywhere: One thing which we should take care to avoid when
+  designing the language and standard library is using names where a value
+  should be required. For example, in Tcl, thanks to the "upvar" and
+  "uplevel" functions, you can do a lot of crazy - bordering on new
+  syntax - things. This is required in Tcl. We should strive for a value
+  oriented language. Whenever a function requires an object, a value
+  should be supplied, instead of a Symbol, which, when looked-up in an
+  appropriate environment, would produce the desired value. Functions
+  similar to "upvar" and "uplevel" can easily be defined as BuiltIns and
+  we need to take care they aren't and functionality like this is not
+  used.

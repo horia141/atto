@@ -1,4 +1,39 @@
-* [30.05.2011-xx.xx.xxxx] 
+* [02.06.2011-xx.xx.xxxx]
+  Add filters to arguments. These should be one argument functions,
+  which we associate with a specific argument and which return either
+  "#T" or "#F". When the function is invoked, each parameter has the
+  specific filter executed and we raise an exception if an "#F" is
+  obtained. This is flexible type-checking. As an example, consider:
+
+    que := [x@(is-number) y@(is-array)=1|2 (...)]
+
+  This would produce:
+
+    (que 10 1|2|3) => ...
+    (que Hello 1|2|3) => Exception ...
+
+* [02.06.2011-xx.xx.xxxx]
+  Add optional arguments. These should have a mandatory default value.
+  They can't be filled by order/positional arguments when calling, but
+  must be explicitly specified by the caller as a named argument. For
+  example:
+
+    que := [x y z=10? (+ (x) (y) (z))
+
+  Would produce:
+
+    (que 10 20) => 40
+    (que 10 20 30) => Exception ...
+    (que 10 20 z=30) => 60
+
+  This will help mightily for complex functions with variable arguments.
+
++ [30.05.2011-02.06.2011] 
+  > Fixed by new types and new syntax. We have symbols, which are the only
+  > things than can identify an object in the environment. These can only
+  > contain alphanumerics and some special characters. Therefore we won't
+  > have problems with embedded special characters.
+
   Fix syntax issues with '=',':','+','*'. We should treat '+' and '*' as
   normal symbols and let them be part of other symbols. If in the argument
   list of a function, we find at the end of the last argument either '+' or
