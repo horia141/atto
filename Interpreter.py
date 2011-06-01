@@ -418,7 +418,7 @@ def interpret(atom,env,curr_func):
         return String(atom.text)
     elif isinstance(atom,Parser.StringEval):
         raise Exception('Execution path not yet implemented!')
-    elif isinstance(atom,Parser.FuncSelf):
+    elif isinstance(atom,Parser.Self):
         return curr_func
     elif isinstance(atom,Parser.Func):
         arg_names = []

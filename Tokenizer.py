@@ -38,19 +38,12 @@ class CallEnd(TkAtom):
     def __repr__(self):
         return 'Tokenizer.CallEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class CallEqual(TkAtom):
+class Dollar(TkAtom):
     def __str__(self):
-        return 'CallEqual'
+        return 'Dollar'
 
     def __repr__(self):
-        return 'Tokenizer.CallEqual(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
-class CallDollar(TkAtom):
-    def __str__(self):
-        return 'CallDollar'
-
-    def __repr__(self):
-        return 'Tokenizer.CallDollar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.Dollar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class Boolean(TkAtom):
     def __str__(self):
@@ -101,6 +94,13 @@ class FuncEnd(TkAtom):
     def __repr__(self):
         return 'Tokenizer.FuncEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
+class FuncOptional(TkAtom):
+    def __str__(self):
+        return 'FuncOptional'
+
+    def __repr__(self):
+        return 'Tokenizer.FuncOptional(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
 class FuncStar(TkAtom):
     def __str__(self):
         return 'FuncStar'
@@ -150,6 +150,13 @@ class DictBar(TkAtom):
     def __repr__(self):
         return 'Tokenizer.DictBar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
+class CommonEqual(TkAtom):
+    def __str__(self):
+        return 'CommonEqual'
+
+    def __repr__(self):
+        return 'Tokenizer.CommonEqual(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+
 def tokenize(stream):
     assert(isinstance(stream,Stream.Buffer))
 
@@ -158,8 +165,7 @@ def tokenize(stream):
     tokens = []
     parsers = [(CallBeg,re.compile(r'[(]'),0),
                (CallEnd,re.compile(r'[)]'),0),
-               (CallEqual,re.compile(r'[=]'),0),
-               (CallDollar,re.compile(r'[$]'),0),
+               (Dollar,re.compile(r'[$]'),0),
                (Boolean,re.compile(r'#T|#F'),0),
                (Number,re.compile(r'-?[0-9]+(\.[0-9]+)?'),0),
                (Symbol,re.compile(r'[a-zA-Z_]([a-zA-Z0-9-_]|:)*'),0),
@@ -167,6 +173,7 @@ def tokenize(stream):
                (StringEval,re.compile(r'[`]([^`]*)[`]'),1),
                (FuncBeg,re.compile(r'[[]'),0),
                (FuncEnd,re.compile(r'[]]'),0),
+               (FuncOptional,re.compile(r'[?]'),0),
                (FuncStar,re.compile(r'[*]'),0),
                (FuncPlus,re.compile(r'[+]'),0),
                (BlockBeg,re.compile(r'[{]'),0),
@@ -174,6 +181,7 @@ def tokenize(stream):
                (DictBeg,re.compile(r'[<]'),0),
                (DictEnd,re.compile(r'[>]'),0),
                (DictBar,re.compile(r'[|]'),0),
+               (CommonEqual,re.compile(r'[=]'),0),
                (None,re.compile(r'\s+'),0)]
 
     while not local_stream.finished:

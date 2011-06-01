@@ -84,6 +84,27 @@ class Call(PsAtom):
     def namedArgs(self):
         return self.__named_args
 
+class Self(PsAtom):
+    def __init__(self,text,geometry):
+        assert(isinstance(text,str))
+        
+        super(Self,self).__init__(geometry)
+
+        self.__text = str(text)
+
+    def __str__(self):
+        return self.__text
+
+    def __repr__(self):
+        return 'Parser.Self(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
+
+    def clone(self):
+        return Self(self.__text,self.geometry)
+
+    @property
+    def text(self):
+        return self.__text
+
 class Boolean(PsAtom):
     def __init__(self,text,geometry):
         assert(isinstance(text,str))
@@ -189,31 +210,45 @@ class StringEval(PsAtom):
     def text(self):
         return self.__text
 
-class FuncSelf(PsAtom):
-    def __init__(self,text,geometry):
-        assert(isinstance(text,str))
-        
-        super(FuncSelf,self).__init__(geometry)
+class FuncArg(object):
+    def __init__(self,name,default,optional):
+        assert(isinstance(name,PsAtom))
+        assert(default == None or isinstance(default,PsAtom))
+        assert(isinstance(optional,bool))
 
-        self.__text = str(text)
+        self.__name = name.clone()
+        self.__default = default.clone() if default != None else default
+        self.__optional = optional
 
     def __str__(self):
-        return self.__text
+        return str(self.__name) + \
+               ('=' + str(self.__default) if self.__default else '') + \
+               ('?' if self.__optional else '')
 
     def __repr__(self):
-        return 'Parser.FuncSelf(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
+        return 'Parser.FuncArg(' + repr(self.__name) + ',' + \
+                                   repr(self.__default) + ',' + \
+                                   repr(self.__optional) + ')'
 
     def clone(self):
-        return FuncSelf(self.__text,self.geometry)
+        return FuncArg(self.__name,self.__default,self.__optional)
 
     @property
-    def text(self):
-        return self.__text
+    def name(self):
+        return self.__name
+
+    @property
+    def default(self):
+        return self.__default
+
+    @property
+    def optional(self):
+        return self.__optional
 
 class Func(PsAtom):
     def __init__(self,arg_names,vararg_name,vararg_minone,body,geometry):
         assert(isinstance(arg_names,list))
-        assert(all(map(lambda x: isinstance(x,PsAtom),arg_names)))
+        assert(all(map(lambda x: isinstance(x,FuncArg),arg_names)))
         assert(vararg_name == None or isinstance(vararg_name,PsAtom))
         assert((vararg_name == None and vararg_minone == None) or \
                (vararg_name != None and isinstance(vararg_minone,bool)))
@@ -310,7 +345,7 @@ def parse(tokens,pos=0):
             while not isinstance(tokens[pos],Tokenizer.CallEnd):
                 (pos,new_arg) = parse(tokens,pos)
     
-                if isinstance(tokens[pos],Tokenizer.CallEqual):
+                if isinstance(tokens[pos],Tokenizer.CommonEqual):
                     (pos,value) = parse(tokens,pos+1)
                     named_args.append(CallNamedArg(new_arg,value))
                 else:
@@ -320,10 +355,8 @@ def parse(tokens,pos=0):
             values.append(Call(action,order_args,named_args,geometry))
         elif isinstance(tokens[pos],Tokenizer.CallEnd):
             raise Exception('Invalid ")" character!')
-        elif isinstance(tokens[pos],Tokenizer.CallEqual):
-            raise Exception('Invalid "=" character!')
-        elif isinstance(tokens[pos],Tokenizer.CallDollar):
-            values.append(FuncSelf(tokens[pos].text,tokens[pos].geometry))
+        elif isinstance(tokens[pos],Tokenizer.Dollar):
+            values.append(Self(tokens[pos].text,tokens[pos].geometry))
         elif isinstance(tokens[pos],Tokenizer.Boolean):
             values.append(Boolean(tokens[pos].text,tokens[pos].geometry))
         elif isinstance(tokens[pos],Tokenizer.Number):
@@ -342,11 +375,24 @@ def parse(tokens,pos=0):
             vararg_minone = None
     
             while not isinstance(tokens[pos],Tokenizer.FuncEnd):
-                (pos,new_item) = parse(tokens,pos)
-    
-                if isinstance(tokens[pos],Tokenizer.FuncStar) or \
-                   isinstance(tokens[pos],Tokenizer.FuncPlus):
-                    vararg_name = new_item
+                new_item_name = None
+
+                (pos,new_item_name) = parse(tokens,pos)
+
+                if isinstance(tokens[pos],Tokenizer.CommonEqual):
+                    (pos,new_item_default) = parse(tokens,pos+1)
+
+                    if isinstance(tokens[pos],Tokenizer.FuncOptional):
+                        pos = pos + 1
+                        contents.append(FuncArg(new_item_name,new_item_default,True)) 
+                    else:
+                        contents.append(FuncArg(new_item_name,new_item_default,False)) 
+
+                    if isinstance(tokens[pos],Tokenizer.FuncEnd):
+                        raise Exception('Missing function body!')
+                elif isinstance(tokens[pos],Tokenizer.FuncStar) or \
+                     isinstance(tokens[pos],Tokenizer.FuncPlus):
+                    vararg_name = new_item_name
     
                     if isinstance(tokens[pos],Tokenizer.FuncStar):
                         vararg_minone = False
@@ -355,18 +401,18 @@ def parse(tokens,pos=0):
     
                     pos = pos + 1
                     (pos,body) = parse(tokens,pos)
-                    contents.append(body)
-    
+                    contents.append(FuncArg(body,None,False))
+
                     if not isinstance(tokens[pos],Tokenizer.FuncEnd):
                         raise Exception('Invalid function syntax #2!')
                 else:
-                    contents.append(new_item)
-    
+                    contents.append(FuncArg(new_item_name,None,False))
+
             if len(contents) == 0:
                 raise Exception('Invalid function syntax!')
-    
+
             geometry = init_geometry.expandTo(tokens[pos].geometry)
-            values.append(Func(contents[:-1],vararg_name,vararg_minone,contents[-1],geometry))
+            values.append(Func(contents[:-1],vararg_name,vararg_minone,contents[-1].name,geometry))
         elif isinstance(tokens[pos],Tokenizer.FuncEnd):
             raise Exception('Invalid "]" character!')
         elif isinstance(tokens[pos],Tokenizer.FuncStar):
@@ -382,7 +428,7 @@ def parse(tokens,pos=0):
             while not isinstance(tokens[pos],Tokenizer.BlockEnd):
                 (pos,new_arg) = parse(tokens,pos)
     
-                if isinstance(tokens[pos],Tokenizer.CallEqual):
+                if isinstance(tokens[pos],Tokenizer.CommonEqual):
                     (pos,value) = parse(tokens,pos+1)
                     named_args.append(CallNamedArg(new_arg,value))
                 else:
@@ -410,6 +456,8 @@ def parse(tokens,pos=0):
             raise Exception('Invalid ">" character!')
         elif isinstance(tokens[pos],Tokenizer.DictBar):
             raise Exception('Invalid "|" character!')
+        elif isinstance(tokens[pos],Tokenizer.CommonEqual):
+            raise Exception('Invalid "=" character!')
         else:
             raise Exception('Invalid syntax!')
 
