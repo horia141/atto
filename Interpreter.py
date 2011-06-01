@@ -16,13 +16,13 @@ class Boolean(InAtom):
         self.__value = value
 
     def __str__(self):
-        return 'T' if self.__value else 'F'
+        return '#T' if self.__value else '#F'
 
     def __repr__(self):
         return 'Interpreter.Boolean(' + repr(self.__value) + ')'
 
     def __eq__(self,other):
-        if isinstance(other,Boolean):
+        if not isinstance(other,Boolean):
             return False
 
         return self.__value == other.__value
@@ -47,7 +47,7 @@ class Number(InAtom):
         return 'Interpreter.Number(' + repr(self.__value) + ')'
 
     def __eq__(self,other):
-        if isinstance(other,Number):
+        if not isinstance(other,Number):
             return False
 
         return self.__value == other.__value
@@ -97,7 +97,7 @@ class String(InAtom):
         return 'Interpreter.String(' + repr(self.__value) + ')'
 
     def __eq__(self,other):
-        if not isinstance(other,Symbol):
+        if not isinstance(other,String):
             return False
 
         return self.__value == other.__value
@@ -128,7 +128,7 @@ class BuiltIn(InAtom):
                      '<<BuiltIn "' + self.__func.__name__ + '">>]'
 
     def __repr__(self):
-        fullname = inspect.getmodule(self.__func) + '.' + self.__func.__name__
+        fullname = inspect.getmodule(self.__func).__name__ + '.' + self.__func.__name__
         return 'Interpreter.BuiltIn(' + fullname + ')'
 
     def __eq__(self,other):
@@ -284,30 +284,27 @@ def interpret(atom,env,curr_func):
     assert(curr_func == None or isinstance(curr_func,Func))
     
     if isinstance(atom,Parser.Call):
-        if len(atom.action) == 1:
-            action = interpret(atom.action[0],env,curr_func)
+        action = interpret(atom.action,env,curr_func)
 
-            if isinstance(action,Boolean):
+        if isinstance(action,Boolean):
                 raise Exception('Cannot call a boolean!')
-            elif isinstance(action,Number):
-                raise Exception('Cannot call a number!')
-            elif isinstance(action,Symbol):
-                for one_env in reversed(env):
-                    if action.value in one_env:
-                        fn = one_env[action.value]
-                        break
-                else:
-                    raise Exception('Couldn\'t find name "' + action.value + '"!')
-            elif isinstance(action,String):
-                raise Exception('Cannot call a string!')
-            elif isinstance(action,Func):
-                fn = action
-            elif isinstance(action,Dict):
-                fn = action
+        elif isinstance(action,Number):
+            raise Exception('Cannot call a number!')
+        elif isinstance(action,Symbol):
+            for one_env in reversed(env):
+                if action.value in one_env:
+                    fn = one_env[action.value]
+                    break
             else:
-                raise Exception('Should not have gotten here!')
+                raise Exception('Couldn\'t find name "' + action.value + '"!')
+        elif isinstance(action,String):
+            raise Exception('Cannot call a string!')
+        elif isinstance(action,Func):
+            fn = action
+        elif isinstance(action,Dict):
+            fn = action
         else:
-            pass
+            raise Exception('Should not have gotten here!')
 
         if isinstance(fn,Boolean):
             if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
@@ -409,7 +406,7 @@ def interpret(atom,env,curr_func):
         else:
             raise Exception('Should not have gotten here!')
     elif isinstance(atom,Parser.Boolean):
-        if atom.text == 'T':
+        if atom.text == '#T':
             return Boolean(True)
         else:
             return Boolean(False)

@@ -52,13 +52,6 @@ class CallDollar(TkAtom):
     def __repr__(self):
         return 'Tokenizer.CallDollar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class CallLookupSep(TkAtom):
-    def __str__(self):
-        return 'CallLookupSep'
-
-    def __repr__(self):
-        return 'Tokenizer.CallLookupSep(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class Boolean(TkAtom):
     def __str__(self):
         return 'Boolean "' + self.text + '"'
@@ -167,10 +160,9 @@ def tokenize(stream):
                (CallEnd,re.compile(r'[)]'),0),
                (CallEqual,re.compile(r'[=]'),0),
                (CallDollar,re.compile(r'[$]'),0),
-               (CallLookupSep,re.compile(r'[:]'),0),
-               (Boolean,re.compile(r'T|F'),0),
+               (Boolean,re.compile(r'#T|#F'),0),
                (Number,re.compile(r'-?[0-9]+(\.[0-9]+)?'),0),
-               (Symbol,re.compile(r'[a-zA-Z_][a-zA-Z0-9-_]*'),0),
+               (Symbol,re.compile(r'[a-zA-Z_]([a-zA-Z0-9-_]|:)*'),0),
                (String,re.compile(r'[\']([^\']*)[\']'),1),
                (StringEval,re.compile(r'[`]([^`]*)[`]'),1),
                (FuncBeg,re.compile(r'[[]'),0),

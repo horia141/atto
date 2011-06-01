@@ -46,8 +46,7 @@ class CallNamedArg(object):
 
 class Call(PsAtom):
     def __init__(self,action,order_args,named_args,geometry):
-        assert(isinstance(action,list))
-        assert(all(map(lambda x: isinstance(x,PsAtom),action)))
+        assert(isinstance(action,PsAtom))
         assert(isinstance(order_args,list))
         assert(all(map(lambda x: isinstance(x,PsAtom),order_args)))
         assert(isinstance(named_args,list))
@@ -55,12 +54,12 @@ class Call(PsAtom):
 
         super(Call,self).__init__(geometry)
 
-        self.__action = map(lambda x: x.clone(),action)
+        self.__action = action.clone()
         self.__order_args = map(lambda x: x.clone(),order_args)
         self.__named_args = map(lambda x: x.clone(),named_args)
 
     def __str__(self):
-        return '(' + ':'.join(map(str,self.__action)) + \
+        return '(' + str(self.__action) + \
                 (' ' + ' '.join(map(str,self.__order_args)) if self.__order_args else '') + \
                 (' ' + ' '.join(map(str,self.__named_args)) if self.__named_args else '') + ')'
 
@@ -304,14 +303,9 @@ def parse(tokens,pos=0):
     while True:
         if isinstance(tokens[pos],Tokenizer.CallBeg):
             init_geometry = tokens[pos].geometry
-            (pos,init_action) = parse(tokens,pos+1)
-            action = [init_action]
+            (pos,action) = parse(tokens,pos+1)
             order_args = []
             named_args = []
-    
-            while isinstance(tokens[pos],Tokenizer.CallLookupSep):
-                (pos,next_action) = parse(tokens,pos+1)
-                action.append(next_action)
     
             while not isinstance(tokens[pos],Tokenizer.CallEnd):
                 (pos,new_arg) = parse(tokens,pos)
@@ -330,8 +324,6 @@ def parse(tokens,pos=0):
             raise Exception('Invalid "=" character!')
         elif isinstance(tokens[pos],Tokenizer.CallDollar):
             values.append(FuncSelf(tokens[pos].text,tokens[pos].geometry))
-        elif isinstance(tokens[pos],Tokenizer.CallLookupSep):
-            raise Exception('Invalid ":" character!')
         elif isinstance(tokens[pos],Tokenizer.Boolean):
             values.append(Boolean(tokens[pos].text,tokens[pos].geometry))
         elif isinstance(tokens[pos],Tokenizer.Number):
@@ -383,14 +375,9 @@ def parse(tokens,pos=0):
             raise Exception('Invalid "+" character!')
         elif isinstance(tokens[pos],Tokenizer.BlockBeg):
             init_geometry = tokens[pos].geometry
-            (pos,init_action) = parse(tokens,pos+1)
-            action = [init_action]
+            (pos,action) = parse(tokens,pos+1)
             order_args = []
             named_args = []
-    
-            while isinstance(tokens[pos],Tokenizer.CallLookupSep):
-                (pos,next_action) = parse(tokens,pos+1)
-                action.append(next_action)
     
             while not isinstance(tokens[pos],Tokenizer.BlockEnd):
                 (pos,new_arg) = parse(tokens,pos)
