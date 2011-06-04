@@ -109,6 +109,33 @@ class String(InAtom):
     def value(self):
         return self.__value
 
+class FuncArg(object):
+    def __init__(self,name,default):
+        assert(isinstance(name,str))
+        assert(default == None or isinstance(default,InAtom))
+
+        self.__name = str(name)
+        self.__default = default.clone() if default != None else None
+
+    def __str__(self):
+        return self.__name + \
+               ('=' + str(self.__default) if self.__default else '')
+
+    def __repr__(self):
+        return 'Interpreter.FuncArg(' + repr(self.__name) + ',' + \
+                                        repr(self.__default) + ')'
+
+    def clone(self):
+        return FuncArg(self.__name,self.__default)
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def default(self):
+        return self.__default
+
 class BuiltIn(InAtom):
     def __init__(self,func):
         assert(hasattr(func,'__call__'))
@@ -158,9 +185,11 @@ class BuiltIn(InAtom):
         return self.__func
 
 class Func(InAtom):
-    def __init__(self,arg_names,vararg_name,vararg_minone,body,env):
-        assert(isinstance(arg_names,list))
-        assert(all(map(lambda x: isinstance(x,str),arg_names)))
+    def __init__(self,reqarg_names,optarg_names,vararg_name,vararg_minone,body,env):
+        assert(isinstance(reqarg_names,list))
+        assert(all(map(lambda x: isinstance(x,FuncArg),reqarg_names)))
+        assert(isinstance(optarg_names,list))
+        assert(all(map(lambda x: isinstance(x,FuncArg),optarg_names)))
         assert(vararg_name == None or isinstance(vararg_name,str))
         assert((vararg_name == None and vararg_minone == None) or \
                 vararg_name != None and isinstance(vararg_minone,bool))
@@ -170,34 +199,50 @@ class Func(InAtom):
         assert(all(map(lambda x: all(map(lambda y: isinstance(y,str),x.keys())),env)))
         assert(all(map(lambda x: all(map(lambda y: isinstance(y,InAtom),x.values())),env)))
 
-        self.__arg_names = map(lambda x: str(x),arg_names)
+        self.__reqarg_names = map(lambda x: x.clone(),reqarg_names)
+        self.__optarg_names = map(lambda x: x.clone(),optarg_names)
         self.__vararg_name = str(vararg_name) if vararg_name else None
         self.__vararg_minone = vararg_minone
         self.__body = body.clone()
         self.__env = map(lambda x: dict([(str(y),x[y].clone()) for y in x]),env)
 
     def __str__(self):
-        return '[' + ' '.join(map(str,self.__arg_names)) + \
-                     (' ' if len(self.__arg_names) > 0 else '') + \
-                     (str(self.__vararg_name) + \
-                      ('+ ' if self.__vararg_minone else '* ') if self.__vararg_name else '') + \
-                     str(self.__body) + ']'
+        if self.__vararg_name:
+            return '[' + ' '.join(map(str,self.__reqarg_names)) + \
+                        (' ' if self.__reqarg_names != [] else '') + \
+                         ' '.join(map(lambda x: str(x) + '?',self.__optarg_names)) + \
+                        (' ' if self.__optarg_names != [] else '') + \
+                        str(self.__vararg_name) + ('+ ' if self.__vararg_minone else '* ') + \
+                        str(self.__body) + ']'
+        else:
+            return '[' + ' '.join(map(str,self.__reqarg_names)) + \
+                        (' ' if self.__reqarg_names != [] else '') + \
+                         ' '.join(map(lambda x: str(x) + '?',self.__optarg_names)) + \
+                        (' ' if self.__optarg_names != [] else '') + \
+                        str(self.__body) + ']'
 
     def __repr__(self):
-        return 'Interpreter.Func(' + repr(self.__arg_names) + ',' + repr(self.__vararg_name) + ',' + \
-                                     repr(self.__vararg_minone) + ',' + repr(self.__body) + \
-                                     repr(self.__env) + ')'
+        return 'Interpreter.Func(' + '[' + ','.join(map(repr,self.__reqarg_names)) + '],' + \
+                                     '[' + ','.join(map(repr,self.__optarg_names)) + '],' + \
+                                     repr(self.__vararg_name) + ',' + \
+                                     repr(self.__vararg_minone) + ',' + \
+                                     repr(self.__body) + ',' + repr(self.__env) + ')'
 
     def __eq__(self,other):
         return False
 
     def clone(self):
-        return Func(self.__arg_names,self.__vararg_name,self.__vararg_minone,
+        return Func(self.__reqarg_names,self.__optarg_names,
+                    self.__vararg_name,self.__vararg_minone,
                     self.__body,self.__env)
 
     @property
-    def argNames(self):
-        return self.__arg_names
+    def reqargNames(self):
+        return self.__reqarg_names
+
+    @property
+    def optargNames(self):
+        return self.__optarg_names
 
     @property
     def hasVararg(self):
@@ -287,7 +332,7 @@ def interpret(atom,env,curr_func):
         action = interpret(atom.action,env,curr_func)
 
         if isinstance(action,Boolean):
-                raise Exception('Cannot call a boolean!')
+            raise Exception('Cannot call a boolean!')
         elif isinstance(action,Number):
             raise Exception('Cannot call a number!')
         elif isinstance(action,Symbol):
@@ -330,69 +375,73 @@ def interpret(atom,env,curr_func):
             if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
                 return fn
             else:
-                args = dict([(name,None) for name in fn.argNames])
-                total_arg_cnt = len(atom.namedArgs) + len(atom.orderArgs)
-    
-                if fn.hasVararg:
-                    if fn.varargMinOne:
-                        if len(args) >= total_arg_cnt:
-                            raise Exception('Invalid number of arguments!')
-                    else:
-                        if len(args) > total_arg_cnt:
-                            raise Exception('Invalid number of arguments!')
-                else:
-                    if len(args) != total_arg_cnt:
-                        raise Exception('Invalid number of arguments!')
-    
+                reqargs = dict([(arg.name,(arg.default,False)) for arg in fn.reqargNames])
+                optargs = dict([(arg.name,(arg.default,False)) for arg in fn.optargNames])
+                used_opt_names = 0
+
                 for named_arg in atom.namedArgs:
                     named_name = interpret(named_arg.name,env,curr_func)
-    
+
                     if not isinstance(named_name,Symbol):
                         raise Exception('Invalid argument name type!')
-    
-                    if named_name.value not in args:
+
+                    if named_name.value in reqargs:
+                        if reqargs[named_name.value][1]:
+                            raise Exception('Argument "' + named_name.value + '" was used twice!')
+
+                        reqargs[named_name.value] = (interpret(named_arg.value,env,curr_func),True)
+                    elif named_name.value in optargs:
+                        if optargs[named_name.value][1]:
+                            raise Exception('Argument "' + named_name.value + '" was used twice!')
+
+                        optargs[named_name.value] = (interpret(named_arg.value,env,curr_func),True)
+                        used_opt_names = used_opt_names + 1
+                    else:
                         raise Exception('Invalid argument name "' + named_name.value + '"!')
-    
-                    if args[named_name.value] != None:
-                        raise Exception('Argument "' + named_name.value + '" was specified twice!')
-    
-                    args[named_name.value] = interpret(named_arg.value,env,curr_func)
-    
+
                 carg = 0
-    
-                for order_args in fn.argNames:
-                    if args[order_args] == None:
-                        args[order_args] = interpret(atom.orderArgs[carg],env,curr_func)
+
+                for order_args in fn.reqargNames:
+                    if reqargs[order_args.name][0] == None or \
+                       (reqargs[order_args.name][0] != None and reqargs[order_args.name][1] == False):
+                        if carg >= len(atom.orderArgs):
+                            raise Exception('Too few arguments!')
+
+                        reqargs[order_args.name] = (interpret(atom.orderArgs[carg],env,curr_func),True)
                         carg = carg + 1
-    
+
                 if isinstance(fn,BuiltIn):
-                    inorder_args = [args[arg_name] for arg_name in fn.argNames]
-    
-                    if fn.hasVararg:
-                        vararg_i = 0
-                        vararg_cnt = total_arg_cnt - len(args)
-    
-                        while vararg_i < vararg_cnt:
-                            inorder_args.append(interpret(atom.orderArgs[carg],env,curr_func))
-                            vararg_i = vararg_i + 1
-                            carg = carg + 1
-    
-                    return fn.func(*inorder_args)
+                    pass
                 else:
                     if fn.hasVararg:
-                        vararg_i = 0
-                        vararg_cnt = total_arg_cnt - len(args)
+                        vararg_i = carg
                         vararg_kvs = [(Symbol('Length'),Symbol(str(vararg_cnt)))]
-            
-                        while vararg_i < vararg_cnt:
-                            vararg_kvs.append((Symbol(str(vararg_i)),
-                                               interpret(atom.orderArgs[carg],env,curr_func)))
+
+                        while vararg_i < len(atom.orderArgs):
+                            vararg_kvs.append((Symbol(str(vararg_i - carg)),
+                                               interpret(atom.orderArgs[vararg_i],env,curr_func)))
                             vararg_i = vararg_i + 1
-                            carg = carg + 1
-            
-                        args[fn.varargName] = Dict(vararg_kvs)
-        
-                    new_env = fn.env
+
+                        reqargs[fn.varargName] = (Dict(vararg_kvs),True)
+                    else:
+                        if len(fn.reqargNames) != len(atom.orderArgs) + len(atom.namedArgs) - used_opt_names:
+                            raise Exception('Too many arguments!')
+
+                    args = {}
+
+                    for reqarg_name,(reqarg_value,reqarg_used) in reqargs.iteritems():
+                        if not reqarg_value:
+                            raise Exception('Argument "' + reqarg_name + '" has no value!')
+
+                        args[reqarg_name] = reqarg_value
+
+                    for optarg_name,(optarg_value,optarg_used) in optargs.iteritems():
+                        if not optarg_value:
+                            raise Exception('Argument "' + optarg_name + '" has no value!')
+
+                        args[optarg_name] = optarg_value
+
+                    new_env = [dict([(k,v.clone()) for (k,v) in e.iteritems()]) for e in fn.env]
                     new_env.append(args)
 
                     return interpret(fn.body,new_env,fn)
@@ -421,17 +470,38 @@ def interpret(atom,env,curr_func):
     elif isinstance(atom,Parser.Self):
         return curr_func
     elif isinstance(atom,Parser.Func):
-        arg_names = []
+        reqarg_names = []
+        optarg_names = []
         vararg_name = None
         vararg_minone = None
 
-        for arg_name in atom.argNames:
-            name = interpret(arg_name,env,curr_func)
+        names = set()
 
+        for reqarg_name in atom.reqargNames:
+            name = interpret(reqarg_name.name,env,curr_func)
+            default = interpret(reqarg_name.default,env,curr_func) if reqarg_name.default else None
+            
             if not isinstance(name,Symbol):
-                raise Exception('Argument name can\'t be anython but a Symbol!')
+                raise Exception('Argument name can\'t be anything but a Symbol!')
 
-            arg_names.append(name.value)
+            if name.value in names:
+                raise Exception('Argument "' + name.value + '" is used twice!')
+
+            reqarg_names.append(FuncArg(name.value,default))
+            names.add(name.value)
+
+        for optarg_name in atom.optargNames:
+            name = interpret(optarg_name.name,env,curr_func)
+            default = interpret(optarg_name.default,env,curr_func) if optarg_name.default else None
+            
+            if not isinstance(name,Symbol):
+                raise Exception('Argument name can\'t be anything but a Symbol!')
+
+            if name.value in names:
+                raise Exception('Argument "' + name.value + '" is used twice!')
+
+            optarg_names.append(FuncArg(name.value,default))
+            names.add(name.value)
 
         if atom.hasVararg:
             name = interpret(atom.varargName,env,curr_func)
@@ -439,10 +509,13 @@ def interpret(atom,env,curr_func):
             if not isinstance(name,Symbol):
                 raise Exception('Variable argument name can\'t be anython but a Symbol!')
 
+            if name.value in names:
+                raise Exception('Argument "' + name.value + '" is used twice!')
+
             vararg_name = name.value
             vararg_minone = atom.varargMinOne
 
-        return Func(arg_names,vararg_name,vararg_minone,atom.body,env)
+        return Func(reqarg_names,optarg_names,vararg_name,vararg_minone,atom.body,env)
     elif isinstance(atom,Parser.Dict):
         keyvalues = []
 

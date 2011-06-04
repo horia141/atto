@@ -211,27 +211,23 @@ class StringEval(PsAtom):
         return self.__text
 
 class FuncArg(object):
-    def __init__(self,name,default,optional):
+    def __init__(self,name,default):
         assert(isinstance(name,PsAtom))
         assert(default == None or isinstance(default,PsAtom))
-        assert(isinstance(optional,bool))
 
         self.__name = name.clone()
-        self.__default = default.clone() if default != None else default
-        self.__optional = optional
+        self.__default = default.clone() if default != None else None
 
     def __str__(self):
         return str(self.__name) + \
-               ('=' + str(self.__default) if self.__default else '') + \
-               ('?' if self.__optional else '')
+               ('=' + str(self.__default) if self.__default else '')
 
     def __repr__(self):
         return 'Parser.FuncArg(' + repr(self.__name) + ',' + \
-                                   repr(self.__default) + ',' + \
-                                   repr(self.__optional) + ')'
+                                   repr(self.__default) + ')'
 
     def clone(self):
-        return FuncArg(self.__name,self.__default,self.__optional)
+        return FuncArg(self.__name,self.__default)
 
     @property
     def name(self):
@@ -241,14 +237,14 @@ class FuncArg(object):
     def default(self):
         return self.__default
 
-    @property
-    def optional(self):
-        return self.__optional
-
 class Func(PsAtom):
-    def __init__(self,arg_names,vararg_name,vararg_minone,body,geometry):
-        assert(isinstance(arg_names,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),arg_names)))
+    def __init__(self,reqargs,defargs,optargs,vararg_name,vararg_minone,body,geometry):
+        assert(isinstance(reqargs,list))
+        assert(all(map(lambda x: isinstance(x,FuncArg),reqargs)))
+        assert(isinstance(defargs,list))
+        assert(all(map(lambda x: isinstance(x,FuncArg),defargs)))
+        assert(isinstance(optargs,list))
+        assert(all(map(lambda x: isinstance(x,FuncArg),optargs)))
         assert(vararg_name == None or isinstance(vararg_name,PsAtom))
         assert((vararg_name == None and vararg_minone == None) or \
                (vararg_name != None and isinstance(vararg_minone,bool)))
@@ -256,35 +252,56 @@ class Func(PsAtom):
 
         super(Func,self).__init__(geometry)
 
-        self.__arg_names = map(lambda x: x.clone(),arg_names)
+        self.__reqargs = map(lambda x: x.clone(),reqargs)
+        self.__defargs = map(lambda x: x.clone(),defargs)
+        self.__optargs = map(lambda x: x.clone(),optargs)
         self.__vararg_name = vararg_name.clone() if vararg_name else None
         self.__vararg_minone = vararg_minone
         self.__body = body.clone()
 
     def __str__(self):
         if self.__vararg_name:
-            return '[' + ' '.join(map(str,self.__arg_names)) + \
-                        (' ' if self.__arg_names != [] else '') + \
+            return '[' + ' '.join(map(str,self.__reqargs)) + \
+                        (' ' if self.__reqargs != [] else '') + \
+                         ' '.join(map(str,self.__defargs)) + \
+                        (' ' if self.__defargs != [] else '') + \
+                         ' '.join(map(lambda x: str(x) + '?',self.__optargs)) + \
+                        (' ' if self.__optargs != [] else '') + \
                         str(self.__vararg_name) + ('+ ' if self.__vararg_minone else '* ') + \
                         str(self.__body) + ']'
         else:
-            return '[' + ' '.join(map(str,self.__arg_names)) + \
-                        (' ' if self.__arg_names != [] else '') + \
+            return '[' + ' '.join(map(str,self.__reqargs)) + \
+                        (' ' if self.__reqargs != [] else '') + \
+                         ' '.join(map(str,self.__defargs)) + \
+                        (' ' if self.__defargs != [] else '') + \
+                         ' '.join(map(lambda x: str(x) + '?',self.__optargs)) + \
+                        (' ' if self.__optargs != [] else '') + \
                         str(self.__body) + ']'
 
     def __repr__(self):
-        return 'Parser.Func(' + '[' + ','.join(map(repr,self.__arg_names)) + '],' + \
+        return 'Parser.Func(' + '[' + ','.join(map(repr,self.__reqargs)) + '],' + \
+                                '[' + ','.join(map(repr,self.__defargs)) + '],' + \
+                                '[' + ','.join(map(repr,self.__optargs)) + '],' + \
                                  repr(self.__vararg_name) + ',' + \
                                  repr(self.__vararg_minone) + ',' + \
                                  repr(self.__body) + ',' + repr(self.geometry) + ')'
 
     def clone(self):
-        return Func(self.__arg_names,self.__vararg_name,self.__vararg_minone,
+        return Func(self.__reqargs,self.__defargs,self.__optargs,
+                    self.__vararg_name,self.__vararg_minone,
                     self.__body,self.geometry)
 
     @property
-    def argNames(self):
-        return self.__arg_names
+    def reqargs(self):
+        return self.__reqargs
+
+    @property
+    def defargs(self):
+        return self.__defargs
+
+    @property
+    def optargs(self):
+        return self.__optargs
 
     @property
     def hasVararg(self):
@@ -368,51 +385,147 @@ def parse(tokens,pos=0):
         elif isinstance(tokens[pos],Tokenizer.StringEval):
             values.append(StringEval(tokens[pos].text,tokens[pos].geometry))
         elif isinstance(tokens[pos],Tokenizer.FuncBeg):
+            ARGST_REQ = 0
+            ARGST_DEF = 1
+            ARGST_OPT = 2
+            ARGST_VAR = 3
+            ARGST_END = 4
+
             init_geometry = tokens[pos].geometry
             pos = pos + 1
-            contents = []
+            cpos = 0
+            reqargs = []
+            defargs = []
+            optargs = []
             vararg_name = None
             vararg_minone = None
-    
+            body = None
+            contents = []
+            state = ARGST_REQ
+
             while not isinstance(tokens[pos],Tokenizer.FuncEnd):
-                new_item_name = None
-
-                (pos,new_item_name) = parse(tokens,pos)
-
                 if isinstance(tokens[pos],Tokenizer.CommonEqual):
-                    (pos,new_item_default) = parse(tokens,pos+1)
-
-                    if isinstance(tokens[pos],Tokenizer.FuncOptional):
-                        pos = pos + 1
-                        contents.append(FuncArg(new_item_name,new_item_default,True)) 
-                    else:
-                        contents.append(FuncArg(new_item_name,new_item_default,False)) 
-
-                    if isinstance(tokens[pos],Tokenizer.FuncEnd):
-                        raise Exception('Missing function body!')
-                elif isinstance(tokens[pos],Tokenizer.FuncStar) or \
-                     isinstance(tokens[pos],Tokenizer.FuncPlus):
-                    vararg_name = new_item_name
-    
-                    if isinstance(tokens[pos],Tokenizer.FuncStar):
-                        vararg_minone = False
-                    else:
-                        vararg_minone = True
-    
+                    contents.append(tokens[pos])
                     pos = pos + 1
-                    (pos,body) = parse(tokens,pos)
-                    contents.append(FuncArg(body,None,False))
-
-                    if not isinstance(tokens[pos],Tokenizer.FuncEnd):
-                        raise Exception('Invalid function syntax #2!')
+                elif isinstance(tokens[pos],Tokenizer.FuncOptional):
+                    contents.append(tokens[pos])
+                    pos = pos + 1
+                elif isinstance(tokens[pos],Tokenizer.FuncStar):
+                    contents.append(tokens[pos])
+                    pos = pos + 1
+                elif isinstance(tokens[pos],Tokenizer.FuncPlus):
+                    contents.append(tokens[pos])
+                    pos = pos + 1
                 else:
-                    contents.append(FuncArg(new_item_name,None,False))
+                    (pos,new_item) = parse(tokens,pos)
+                    contents.append(new_item)
 
-            if len(contents) == 0:
-                raise Exception('Invalid function syntax!')
+            if len(contents) < 1:
+                raise Exception('Invalid empty function!')
+
+            if not isinstance(contents[-1],Tokenizer.CommonEqual) and \
+               not isinstance(contents[-1],Tokenizer.FuncOptional) and \
+               not isinstance(contents[-1],Tokenizer.FuncStar) and \
+               not isinstance(contents[-1],Tokenizer.FuncPlus):
+                body = contents[-1]
+                del contents[-1]
+            else:
+                raise Exception('Invalid body!')
+
+            while state == ARGST_REQ:
+                if cpos + 3 < len(contents) and \
+                   isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
+                   isinstance(contents[cpos+3],Tokenizer.FuncOptional):
+                    state = ARGST_OPT
+                    optargs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                    cpos = cpos + 4
+                elif cpos + 2 < len(contents) and \
+                     isinstance(contents[cpos+1],Tokenizer.CommonEqual):
+                    state = ARGST_DEF
+                    defargs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                    cpos = cpos + 3
+                elif cpos + 1 < len(contents) and \
+                     isinstance(contents[cpos+1],Tokenizer.FuncStar):
+                    state = ARGST_VAR
+                    vararg_name = contents[cpos]
+                    vararg_minone = False
+                    cpos = cpos + 2
+                elif cpos + 1 < len(contents) and \
+                     isinstance(contents[cpos+1],Tokenizer.FuncPlus):
+                    state = ARGST_VAR
+                    vararg_name = contents[cpos]
+                    vararg_minone = True
+                    cpos = cpos + 2
+                elif cpos < len(contents):
+                    state = ARGST_REQ
+                    reqargs.append(FuncArg(contents[cpos],None))
+                    cpos = cpos + 1
+                else:
+                    state = ARGST_END
+
+            while state == ARGST_DEF:
+                if cpos + 3 < len(contents) and \
+                   isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
+                   isinstance(contents[cpos+3],Tokenizer.FuncOptional):
+                    state = ARGST_OPT
+                    optargs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                    cpos = cpos + 4
+                elif cpos + 2 < len(contents) and \
+                     isinstance(contents[cpos+1],Tokenizer.CommonEqual):
+                    state = ARGST_DEF
+                    defargs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                    cpos = cpos + 3
+                elif cpos + 1 < len(contents) and \
+                     isinstance(contents[cpos+1],Tokenizer.FuncStar):
+                    state = ARGST_VAR
+                    vararg_name = contents[cpos]
+                    vararg_minone = False
+                    cpos = cpos + 2
+                elif cpos + 1 < len(contents) and \
+                     isinstance(contents[cpos+1],Tokenizer.FuncPlus):
+                    state = ARGST_VAR
+                    vararg_name = contents[cpos]
+                    vararg_minone = True
+                    cpos = cpos + 2
+                elif cpos < len(contents):
+                    raise Exception('Cannot have normal argument after default one!')
+                else:
+                    state = ARGST_END
+
+            while state == ARGST_OPT:
+                if cpos + 3 < len(contents) and \
+                   isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
+                   isinstance(contents[cpos+3],Tokenizer.FuncOptional):
+                    state = ARGST_OPT
+                    optargs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                    cpos = cpos + 4
+                elif cpos + 1 < len(contents) and \
+                     isinstance(contents[cpos+1],Tokenizer.FuncStar):
+                    state = ARGST_VAR
+                    vararg_name = contents[cpos]
+                    vararg_minone = False
+                    cpos = cpos + 2
+                elif cpos + 1 < len(contents) and \
+                     isinstance(contents[cpos+1],Tokenizer.FuncPlus):
+                    state = ARGST_VAR
+                    vararg_name = contents[cpos]
+                    vararg_minone = True
+                    cpos = cpos + 2
+                elif cpos < len(contents):
+                    raise Exception('Cannot have normal or default argument after optional one!')
+                else:
+                    state = ARGST_END
+
+            while state == ARGST_VAR:
+                if cpos < len(contents):
+                    raise Exception('Cannot have more than one variable argument1')
+                else:
+                    state = ARGST_END
+
+            assert(state == ARGST_END)
 
             geometry = init_geometry.expandTo(tokens[pos].geometry)
-            values.append(Func(contents[:-1],vararg_name,vararg_minone,contents[-1].name,geometry))
+            values.append(Func(reqargs,defargs,optargs,vararg_name,vararg_minone,body,geometry))
         elif isinstance(tokens[pos],Tokenizer.FuncEnd):
             raise Exception('Invalid "]" character!')
         elif isinstance(tokens[pos],Tokenizer.FuncStar):
@@ -436,7 +549,7 @@ def parse(tokens,pos=0):
     
             geometry = init_geometry.expandTo(tokens[pos].geometry)
             body = Call(action,order_args,named_args,geometry)
-            values.append(Func([],None,None,body,geometry))
+            values.append(Func([],[],[],None,None,body,geometry))
         elif isinstance(tokens[pos],Tokenizer.BlockEnd):
             raise Exception('Invalid "}" character!')
         elif isinstance(tokens[pos],Tokenizer.DictBeg):
