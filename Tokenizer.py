@@ -94,12 +94,12 @@ class FuncEnd(TkAtom):
     def __repr__(self):
         return 'Tokenizer.FuncEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
-class FuncOptional(TkAtom):
+class FuncName(TkAtom):
     def __str__(self):
-        return 'FuncOptional'
+        return 'FuncName'
 
     def __repr__(self):
-        return 'Tokenizer.FuncOptional(' + repr(self.text) + ',' + repr(self.geometry) + ')'
+        return 'Tokenizer.FuncName(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class FuncStar(TkAtom):
     def __str__(self):
@@ -173,7 +173,7 @@ def tokenize(stream):
                (StringEval,re.compile(r'[`]([^`]*)[`]'),1),
                (FuncBeg,re.compile(r'[[]'),0),
                (FuncEnd,re.compile(r'[]]'),0),
-               (FuncOptional,re.compile(r'[?]'),0),
+               (FuncName,re.compile(r'[!]'),0),
                (FuncStar,re.compile(r'[*]'),0),
                (FuncPlus,re.compile(r'[+]'),0),
                (BlockBeg,re.compile(r'[{]'),0),

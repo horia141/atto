@@ -234,86 +234,95 @@ class FuncArg(object):
         return self.__name
 
     @property
+    def hasDefault(self):
+        return self.__default != None
+
+    @property
     def default(self):
         return self.__default
 
 class Func(PsAtom):
-    def __init__(self,reqargs,defargs,optargs,vararg_name,vararg_minone,body,geometry):
-        assert(isinstance(reqargs,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),reqargs)))
-        assert(isinstance(defargs,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),defargs)))
-        assert(isinstance(optargs,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),optargs)))
-        assert(vararg_name == None or isinstance(vararg_name,PsAtom))
-        assert((vararg_name == None and vararg_minone == None) or \
-               (vararg_name != None and isinstance(vararg_minone,bool)))
+    def __init__(self,order,order_defs,order_var,named,named_defs,named_var,body,geometry):
+        assert(isinstance(order,list))
+        assert(all(map(lambda x: isinstance(x,FuncArg),order)))
+        assert(isinstance(order_defs,list))
+        assert(all(map(lambda x: isinstance(x,FuncArg),order_defs)))
+        assert(order_var == None or isinstance(order_var,PsAtom))
+        assert(isinstance(named,list))
+        assert(all(map(lambda x: isinstance(x,FuncArg),named)))
+        assert(isinstance(named_defs,list))
+        assert(all(map(lambda x: isinstance(x,FuncArg),named_defs)))
+        assert(named_var == None or isinstance(named_var,PsAtom))
         assert(isinstance(body,PsAtom))
 
         super(Func,self).__init__(geometry)
 
-        self.__reqargs = map(lambda x: x.clone(),reqargs)
-        self.__defargs = map(lambda x: x.clone(),defargs)
-        self.__optargs = map(lambda x: x.clone(),optargs)
-        self.__vararg_name = vararg_name.clone() if vararg_name else None
-        self.__vararg_minone = vararg_minone
+        self.__order = map(lambda x: x.clone(),order)
+        self.__order_defs = map(lambda x: x.clone(),order_defs)
+        self.__order_var = order_var.clone() if order_var else None
+        self.__named = map(lambda x: x.clone(),named)
+        self.__named_defs = map(lambda x: x.clone(),named_defs)
+        self.__named_var = named_var.clone() if named_var else None
         self.__body = body.clone()
 
     def __str__(self):
-        if self.__vararg_name:
-            return '[' + ' '.join(map(str,self.__reqargs)) + \
-                        (' ' if self.__reqargs != [] else '') + \
-                         ' '.join(map(str,self.__defargs)) + \
-                        (' ' if self.__defargs != [] else '') + \
-                         ' '.join(map(lambda x: str(x) + '?',self.__optargs)) + \
-                        (' ' if self.__optargs != [] else '') + \
-                        str(self.__vararg_name) + ('+ ' if self.__vararg_minone else '* ') + \
-                        str(self.__body) + ']'
-        else:
-            return '[' + ' '.join(map(str,self.__reqargs)) + \
-                        (' ' if self.__reqargs != [] else '') + \
-                         ' '.join(map(str,self.__defargs)) + \
-                        (' ' if self.__defargs != [] else '') + \
-                         ' '.join(map(lambda x: str(x) + '?',self.__optargs)) + \
-                        (' ' if self.__optargs != [] else '') + \
-                        str(self.__body) + ']'
+        def spIfNNil(ls):
+            return ' ' if len(ls) > 0 else ''
+
+        return '[' + ' '.join(map(str,self.__order)) + spIfNNil(self.__order) + \
+                     ' '.join(map(str,self.__order_defs)) + spIfNNil(self.__order_defs) + \
+                     (str(self.__order_var) + '* ' if self.__order_var else '') + \
+                     ' '.join(map(lambda x: str(x) + '!',self.__named)) + spIfNNil(self.__named) + \
+                     ' '.join(map(lambda x: str(x) + '!',self.__named_defs)) + spIfNNil(self.__named_defs) + \
+                     (str(self.__named_var) + '+ ' if self.__named_var else '') + \
+                     str(self.__body) + ']'
 
     def __repr__(self):
-        return 'Parser.Func(' + '[' + ','.join(map(repr,self.__reqargs)) + '],' + \
-                                '[' + ','.join(map(repr,self.__defargs)) + '],' + \
-                                '[' + ','.join(map(repr,self.__optargs)) + '],' + \
-                                 repr(self.__vararg_name) + ',' + \
-                                 repr(self.__vararg_minone) + ',' + \
-                                 repr(self.__body) + ',' + repr(self.geometry) + ')'
+        return 'Parser.Func(' + repr(self.__order) + ',' + \
+                                repr(self.__order_defs) + ',' + \
+                                repr(self.__order_var) + ',' + \
+                                repr(self.__named) + ',' + \
+                                repr(self.__named_defs) + ',' + \
+                                repr(self.__named_var) + ',' + \
+                                repr(self.__body) + ',' + \
+                                repr(self.geometry) + ')'
 
     def clone(self):
-        return Func(self.__reqargs,self.__defargs,self.__optargs,
-                    self.__vararg_name,self.__vararg_minone,
+        return Func(self.__order,self.__order_defs,self.__order_var,
+                    self.__named,self.__named_defs,self.__named_var,
                     self.__body,self.geometry)
 
     @property
-    def reqargs(self):
-        return self.__reqargs
+    def order(self):
+        return self.__order
 
     @property
-    def defargs(self):
-        return self.__defargs
+    def orderDefs(self):
+        return self.__order_defs
 
     @property
-    def optargs(self):
-        return self.__optargs
+    def hasOrderVar(self):
+        return self.__order_var != None
 
     @property
-    def hasVararg(self):
-        return self.__vararg_name != None
+    def orderVar(self):
+        return self.__order_var
 
     @property
-    def varargName(self):
-        return self.__vararg_name
+    def named(self):
+        return self.__named
 
     @property
-    def varargMinOne(self):
-        return self.__vararg_minone
+    def namedDefs(self):
+        return self.__named_defs
+
+    @property
+    def hasNamedVar(self):
+        return self.__named_var != None
+
+    @property
+    def namedVar(self):
+        return self.__named_var
 
     @property
     def body(self):
@@ -385,29 +394,39 @@ def parse(tokens,pos=0):
         elif isinstance(tokens[pos],Tokenizer.StringEval):
             values.append(StringEval(tokens[pos].text,tokens[pos].geometry))
         elif isinstance(tokens[pos],Tokenizer.FuncBeg):
-            ARGST_REQ = 0
-            ARGST_DEF = 1
-            ARGST_OPT = 2
-            ARGST_VAR = 3
-            ARGST_END = 4
+            def testSyntax(token):
+                if isinstance(token,Tokenizer.CommonEqual) or \
+                   isinstance(token,Tokenizer.FuncName) or \
+                   isinstance(token,Tokenizer.FuncStar) or \
+                   isinstance(token,Tokenizer.FuncPlus):
+                    raise Exception('Invalid syntax for function call!')
+
+            FUNC_ORDER = 0
+            FUNC_ORDER_DEFS = 1
+            FUNC_ORDER_VAR = 2
+            FUNC_NAMED = 3
+            FUNC_NAMED_DEFS = 4
+            FUNC_NAMED_VAR = 5
+            FUNC_STOP = 6
 
             init_geometry = tokens[pos].geometry
             pos = pos + 1
             cpos = 0
-            reqargs = []
-            defargs = []
-            optargs = []
-            vararg_name = None
-            vararg_minone = None
+            order = []
+            order_defs = []
+            order_var = None
+            named = []
+            named_defs = []
+            named_var = None
             body = None
             contents = []
-            state = ARGST_REQ
+            state = FUNC_ORDER
 
             while not isinstance(tokens[pos],Tokenizer.FuncEnd):
                 if isinstance(tokens[pos],Tokenizer.CommonEqual):
                     contents.append(tokens[pos])
                     pos = pos + 1
-                elif isinstance(tokens[pos],Tokenizer.FuncOptional):
+                elif isinstance(tokens[pos],Tokenizer.FuncName):
                     contents.append(tokens[pos])
                     pos = pos + 1
                 elif isinstance(tokens[pos],Tokenizer.FuncStar):
@@ -423,111 +442,200 @@ def parse(tokens,pos=0):
             if len(contents) < 1:
                 raise Exception('Invalid empty function!')
 
-            if not isinstance(contents[-1],Tokenizer.CommonEqual) and \
-               not isinstance(contents[-1],Tokenizer.FuncOptional) and \
-               not isinstance(contents[-1],Tokenizer.FuncStar) and \
-               not isinstance(contents[-1],Tokenizer.FuncPlus):
-                body = contents[-1]
-                del contents[-1]
-            else:
-                raise Exception('Invalid body!')
+            testSyntax(contents[-1])
 
-            while state == ARGST_REQ:
-                if cpos + 3 < len(contents) and \
-                   isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
-                   isinstance(contents[cpos+3],Tokenizer.FuncOptional):
-                    state = ARGST_OPT
-                    optargs.append(FuncArg(contents[cpos],contents[cpos+2]))
-                    cpos = cpos + 4
-                elif cpos + 2 < len(contents) and \
-                     isinstance(contents[cpos+1],Tokenizer.CommonEqual):
-                    state = ARGST_DEF
-                    defargs.append(FuncArg(contents[cpos],contents[cpos+2]))
-                    cpos = cpos + 3
-                elif cpos + 1 < len(contents) and \
-                     isinstance(contents[cpos+1],Tokenizer.FuncStar):
-                    state = ARGST_VAR
-                    vararg_name = contents[cpos]
-                    vararg_minone = False
-                    cpos = cpos + 2
-                elif cpos + 1 < len(contents) and \
-                     isinstance(contents[cpos+1],Tokenizer.FuncPlus):
-                    state = ARGST_VAR
-                    vararg_name = contents[cpos]
-                    vararg_minone = True
-                    cpos = cpos + 2
-                elif cpos < len(contents):
-                    state = ARGST_REQ
-                    reqargs.append(FuncArg(contents[cpos],None))
-                    cpos = cpos + 1
+            body = contents[-1]
+            del contents[-1]
+
+            while cpos < len(contents) and state != FUNC_STOP :
+
+
+                if state == FUNC_ORDER:
+                    if cpos + 3 < len(contents) and \
+                       isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
+                       isinstance(contents[cpos+3],Tokenizer.FuncName):
+                        testSyntax(contents[cpos])
+                        testSyntax(contents[cpos+2])
+                        state = FUNC_NAMED_DEFS
+                        named_defs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                        cpos = cpos + 4
+                    elif cpos + 2 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.CommonEqual):
+                        testSyntax(contents[cpos])
+                        testSyntax(contents[cpos+2])
+                        state = FUNC_ORDER_DEFS
+                        order_defs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                        cpos = cpos + 3
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncName):
+                        testSyntax(contents[cpos])
+                        state = FUNC_NAMED
+                        named.append(FuncArg(contents[cpos],None))
+                        cpos = cpos + 2
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncStar):
+                        testSyntax(contents[cpos])
+                        state = FUNC_ORDER_VAR
+                        order_var = contents[cpos]
+                        cpos = cpos + 2
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncPlus):
+                        testSyntax(contents[cpos])
+                        state = FUNC_NAMED_VAR
+                        named_var = contents[cpos]
+                        cpos = cpos + 2
+                    elif cpos < len(contents):
+                        testSyntax(contents[cpos])
+                        state = FUNC_ORDER
+                        order.append(FuncArg(contents[cpos],None))
+                        cpos = cpos + 1
+                    else:
+                        state = FUNC_STOP
+                elif state == FUNC_ORDER_DEFS:
+                    if cpos + 3 < len(contents) and \
+                       isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
+                       isinstance(contents[cpos+3],Tokenizer.FuncName):
+                        testSyntax(contents[cpos])
+                        testSyntax(contents[cpos+2])
+                        state = FUNC_NAMED_DEFS
+                        named_defs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                        cpos = cpos + 4
+                    elif cpos + 2 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.CommonEqual):
+                        testSyntax(contents[cpos])
+                        testSyntax(contents[cpos+2])
+                        state = FUNC_ORDER_DEFS
+                        order_defs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                        cpos = cpos + 3
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncName):
+                        testSyntax(contents[cpos])
+                        state = FUNC_NAMED
+                        named.append(FuncArg(contents[cpos],None))
+                        cpos = cpos + 2
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncStar):
+                        testSyntax(contents[cpos])
+                        state = FUNC_ORDER_VAR
+                        order_var = contents[cpos]
+                        cpos = cpos + 2
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncPlus):
+                        testSyntax(contents[cpos])
+                        state = FUNC_NAMED_VAR
+                        named_var = contents[cpos]
+                        cpos = cpos + 2
+                    elif cpos < len(contents):
+                        raise Exception('Cannot use order arguments after default ones!')
+                    else:
+                        state = FUNC_STOP
+                elif state == FUNC_ORDER_VAR:
+                    if cpos + 3 < len(contents) and \
+                       isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
+                       isinstance(contents[cpos+3],Tokenizer.FuncName):
+                        testSyntax(contents[cpos])
+                        testSyntax(contents[cpos+2])
+                        state = FUNC_NAMED_DEFS
+                        named_defs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                        cpos = cpos + 4
+                    elif cpos + 2 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.CommonEqual):
+                        raise Exception('Cannot use order arguments (with default) after variable one!')
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncName):
+                        testSyntax(contents[cpos])
+                        state = FUNC_NAMED
+                        named.append(FuncArg(contents[cpos],None))
+                        cpos = cpos + 2
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncStar):
+                        raise Exception('Only one variable order argument allowed!')
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncPlus):
+                        testSyntax(contents[cpos])
+                        state = FUNC_NAMED_VAR
+                        named_var = contents[cpos]
+                        cpos = cpos + 2
+                    elif cpos < len(contents):
+                        raise Exception('Cannot use order arguments after variable one!')
+                    else:
+                        state = FUNC_STOP
+                elif state == FUNC_NAMED:
+                    if cpos + 3 < len(contents) and \
+                       isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
+                       isinstance(contents[cpos+3],Tokenizer.FuncName):
+                        testSyntax(contents[cpos])
+                        testSyntax(contents[cpos+2])
+                        state = FUNC_NAMED_DEFS
+                        named_defs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                        cpos = cpos + 4
+                    elif cpos + 2 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.CommonEqual):
+                        raise Exception('Cannot use order arguments (with default) after named ones!')
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncName):
+                        testSyntax(contents[cpos])
+                        state = FUNC_NAMED
+                        named.append(FuncArg(contents[cpos],None))
+                        cpos = cpos + 2
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncStar):
+                        raise Exception('Cannot use variable order argument after named ones!')
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncPlus):
+                        testSyntax(contents[cpos])
+                        state = FUNC_NAMED_VAR
+                        named_var = contents[cpos]
+                        cpos = cpos + 2
+                    elif cpos < len(contents):
+                        raise Exception('Cannot use order arguments after named ones!')
+                    else:
+                        state = FUNC_STOP
+                elif state == FUNC_NAMED_DEFS:
+                    if cpos + 3 < len(contents) and \
+                       isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
+                       isinstance(contents[cpos+3],Tokenizer.FuncName):
+                        testSyntax(contents[cpos])
+                        testSyntax(contents[cpos+2])
+                        state = FUNC_NAMED_DEFS
+                        named_defs.append(FuncArg(contents[cpos],contents[cpos+2]))
+                        cpos = cpos + 4
+                    elif cpos + 2 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.CommonEqual):
+                        raise Exception('Cannot use order arguments (with default) after named ones!')
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncName):
+                        raise Exception('Cannot use named arguments after default named arguments!')
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncStar):
+                        raise Exception('Cannot use variable order argument after named ones!')
+                    elif cpos + 1 < len(contents) and \
+                         isinstance(contents[cpos+1],Tokenizer.FuncPlus):
+                        testSyntax(contents[cpos])
+                        state = FUNC_NAMED_VAR
+                        named_var = contents[cpos]
+                        cpos = cpos + 2
+                    elif cpos < len(contents):
+                        raise Exception('Cannot use order arguments after default ones!')
+                    else:
+                        state = FUNC_STOP
+                elif state == FUNC_NAMED_VAR:
+                    if cpos < len(contents):
+                        raise Exception('Invalid argument after named variable one!')
+                    else:
+                        state = FUNC_STOP
                 else:
-                    state = ARGST_END
+                    raise Exception('Critical Error: Invalid Func FSM Path!')
 
-            while state == ARGST_DEF:
-                if cpos + 3 < len(contents) and \
-                   isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
-                   isinstance(contents[cpos+3],Tokenizer.FuncOptional):
-                    state = ARGST_OPT
-                    optargs.append(FuncArg(contents[cpos],contents[cpos+2]))
-                    cpos = cpos + 4
-                elif cpos + 2 < len(contents) and \
-                     isinstance(contents[cpos+1],Tokenizer.CommonEqual):
-                    state = ARGST_DEF
-                    defargs.append(FuncArg(contents[cpos],contents[cpos+2]))
-                    cpos = cpos + 3
-                elif cpos + 1 < len(contents) and \
-                     isinstance(contents[cpos+1],Tokenizer.FuncStar):
-                    state = ARGST_VAR
-                    vararg_name = contents[cpos]
-                    vararg_minone = False
-                    cpos = cpos + 2
-                elif cpos + 1 < len(contents) and \
-                     isinstance(contents[cpos+1],Tokenizer.FuncPlus):
-                    state = ARGST_VAR
-                    vararg_name = contents[cpos]
-                    vararg_minone = True
-                    cpos = cpos + 2
-                elif cpos < len(contents):
-                    raise Exception('Cannot have normal argument after default one!')
-                else:
-                    state = ARGST_END
-
-            while state == ARGST_OPT:
-                if cpos + 3 < len(contents) and \
-                   isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \
-                   isinstance(contents[cpos+3],Tokenizer.FuncOptional):
-                    state = ARGST_OPT
-                    optargs.append(FuncArg(contents[cpos],contents[cpos+2]))
-                    cpos = cpos + 4
-                elif cpos + 1 < len(contents) and \
-                     isinstance(contents[cpos+1],Tokenizer.FuncStar):
-                    state = ARGST_VAR
-                    vararg_name = contents[cpos]
-                    vararg_minone = False
-                    cpos = cpos + 2
-                elif cpos + 1 < len(contents) and \
-                     isinstance(contents[cpos+1],Tokenizer.FuncPlus):
-                    state = ARGST_VAR
-                    vararg_name = contents[cpos]
-                    vararg_minone = True
-                    cpos = cpos + 2
-                elif cpos < len(contents):
-                    raise Exception('Cannot have normal or default argument after optional one!')
-                else:
-                    state = ARGST_END
-
-            while state == ARGST_VAR:
-                if cpos < len(contents):
-                    raise Exception('Cannot have more than one variable argument1')
-                else:
-                    state = ARGST_END
-
-            assert(state == ARGST_END)
+            if cpos != len(contents):
+                raise Exception('Invalid syntax for function call!')
 
             geometry = init_geometry.expandTo(tokens[pos].geometry)
-            values.append(Func(reqargs,defargs,optargs,vararg_name,vararg_minone,body,geometry))
+            values.append(Func(order,order_defs,order_var,named,named_defs,named_var,body,geometry))
         elif isinstance(tokens[pos],Tokenizer.FuncEnd):
             raise Exception('Invalid "]" character!')
+        elif isinstance(tokens[pos],Tokenizer.FuncName):
+            raise Exception('Invalid "!" character!')
         elif isinstance(tokens[pos],Tokenizer.FuncStar):
             raise Exception('Invalid "*" character!')
         elif isinstance(tokens[pos],Tokenizer.FuncPlus):

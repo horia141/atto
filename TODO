@@ -1,3 +1,7 @@
+* [07.06.2011-xx.xx.xxxx]
+  Change argument order so that all order arguments are first, followed
+  by all named arguments.
+
 * [02.06.2011-xx.xx.xxxx]
   Add filters to arguments. These should be one argument functions,
   which we associate with a specific argument and which return either
