@@ -59,7 +59,7 @@ class Number(InAtom):
     def value(self):
         return self.__value
 
-vclass Symbol(InAtom):
+class Symbol(InAtom):
     def __init__(self,value):
         assert(isinstance(value,str))
 

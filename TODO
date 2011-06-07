@@ -1,8 +1,15 @@
-* [07.06.2011-xx.xx.xxxx]
++ [07.06.2011-07.06.2011]
+  > Added this, by way of "Finished support for new argument format for
+  > functions." commit.
+
   Change argument order so that all order arguments are first, followed
   by all named arguments.
 
-* [02.06.2011-xx.xx.xxxx]
++ [02.06.2011-07.06.2011]
+  > I won't add these, for the moment. We need to get some more working
+  > code. When I'm going to be hurting for it, I'll add it. Otherwise,
+  > there's some gratuitous complexity we can't really afford now.
+
   Add filters to arguments. These should be one argument functions,
   which we associate with a specific argument and which return either
   "#T" or "#F". When the function is invoked, each parameter has the
@@ -16,7 +23,12 @@
     (que 10 1|2|3) => ...
     (que Hello 1|2|3) => Exception ...
 
-* [02.06.2011-xx.xx.xxxx]
++ [02.06.2011-07.06.2011]
+  > Added this, by way of "Finished support for new argument format for
+  > functions." commit. The meaning is not quite the same, but expanded
+  > instead, to encompass a more general view of the types of arguments
+  > allowed.
+
   Add optional arguments. These should have a mandatory default value.
   They can't be filled by order/positional arguments when calling, but
   must be explicitly specified by the caller as a named argument. For
@@ -57,7 +69,12 @@
   lexemes though. '=' and ':' won't be treated as symbols anymore though and
   they will have to have just a fixed meaning.
 
-* [30.05.2011-xx.xx.xxxx]
++ [30.05.2011-07.06.2011]
+  > Added this, by way of "Finished support for new argument format for
+  > functions." commit. The meaning is not quite the same, but expanded
+  > instead, to encompass a more general view of the types of arguments
+  > allowed.
+
   Add default arguments for functions. The form should be:
 
     que := [x y=20 (+ :x :y)]
