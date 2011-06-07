@@ -657,7 +657,7 @@ def parse(tokens,pos=0):
     
             geometry = init_geometry.expandTo(tokens[pos].geometry)
             body = Call(action,order_args,named_args,geometry)
-            values.append(Func([],[],[],None,None,body,geometry))
+            values.append(Func([],[],None,[],[],None,body,geometry))
         elif isinstance(tokens[pos],Tokenizer.BlockEnd):
             raise Exception('Invalid "}" character!')
         elif isinstance(tokens[pos],Tokenizer.DictBeg):

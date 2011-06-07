@@ -140,54 +140,6 @@ class FuncArg(object):
     def default(self):
         return self.__default
 
-class BuiltIn(InAtom):
-    def __init__(self,func):
-        assert(hasattr(func,'__call__'))
-
-        arginfo = inspect.getargspec(func)
-
-        self.__arg_names = arginfo.args
-        self.__vararg_name = arginfo.varargs
-        self.__vararg_minone = False
-        self.__func = func
-
-    def __str__(self):
-        return '[' + ' '.join(map(str,self.__arg_names)) + \
-                     (' ' if len(self.__arg_names) > 0 else '') + \
-                     (str(self.__vararg_name) + \
-                      ('+ ' if self.__vararg_minone else '* ') if self.__vararg_name else '') + \
-                     '<<BuiltIn "' + self.__func.__name__ + '">>]'
-
-    def __repr__(self):
-        fullname = inspect.getmodule(self.__func).__name__ + '.' + self.__func.__name__
-        return 'Interpreter.BuiltIn(' + fullname + ')'
-
-    def __eq__(self,other):
-        return False
-
-    def clone(self):
-        return BuiltIn(self.__func)
-
-    @property
-    def argNames(self):
-        return self.__arg_names
-
-    @property
-    def hasVararg(self):
-        return self.__vararg_name != None
-
-    @property
-    def varargName(self):
-        return self.__vararg_name
-
-    @property
-    def varargMinOne(self):
-        return self.__vararg_minone
-
-    @property
-    def func(self):
-        return self.__func
-
 class Func(InAtom):
     def __init__(self,order,order_defs,order_var,named,named_defs,named_var,body,env):
         assert(isinstance(order,list))
@@ -284,6 +236,53 @@ class Func(InAtom):
     @property
     def env(self):
         return self.__env
+
+class BuiltIn(InAtom):
+    def __init__(self,func):
+        assert(hasattr(func,'__call__'))
+
+        arginfo = inspect.getargspec(func)
+
+        assert(arginfo.keywords == None)
+        assert(arginfo.defaults == None)
+
+        self.__order = [FuncArg(arg,None) for arg in arginfo.args]
+        self.__order_var = arginfo.varargs if arginfo.varargs else None
+        self.__func = func
+
+    def __str__(self):
+        def spIfNNil(ls):
+            return ' ' if len(ls) > 0 else ''
+
+        return '[' + ' '.join(map(str,self.__order)) + spIfNNil(self.__order) + \
+                     (str(self.__order_var) + '* ' if self.__order_var else '') + \
+                     '<<BuiltIn "' + self.__func.__name__ + '">>]'
+
+    def __repr__(self):
+        fullname = inspect.getmodule(self.__func).__name__ + '.' + self.__func.__name__
+        return 'Interpreter.BuiltIn(' + fullname + ')'
+
+    def __eq__(self,other):
+        return False
+
+    def clone(self):
+        return BuiltIn(self.__func)
+
+    @property
+    def order(self):
+        return self.__order
+
+    @property
+    def hasOrderVar(self):
+        return self.__order_var != None
+
+    @property
+    def orderVar(self):
+        return self.__order_var
+
+    @property
+    def func(self):
+        return self.__func
 
 class Dict(InAtom):
     def __init__(self,keyvalues):
@@ -392,7 +391,7 @@ def interpret(atom,env,curr_func):
                 return fn
             else:
                 raise Exception('Cannot apply arguments to a string!')
-        elif isinstance(fn,Func) or isinstance(fn,BuiltIn):
+        elif isinstance(fn,Func):
             if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
                 return fn
             else:
@@ -458,22 +457,43 @@ def interpret(atom,env,curr_func):
                 if fn.hasNamedVar:
                     named_var[fn.namedVar] = Dict(named_var_kvs)
 
-                if isinstance(fn,BuiltIn):
-                    pass
-                else:
-                    new_level = {}
+                new_level = {}
 
-                    new_level.update(order)
-                    new_level.update(order_defs)
-                    new_level.update(order_var)
-                    new_level.update(named)
-                    new_level.update(named_defs)
-                    new_level.update(named_var)
+                new_level.update(order)
+                new_level.update(order_defs)
+                new_level.update(order_var)
+                new_level.update(named)
+                new_level.update(named_defs)
+                new_level.update(named_var)
 
-                    new_env = [dict([(k,v.clone()) for (k,v) in e.iteritems()]) for e in fn.env]
-                    new_env.append(new_level)
+                new_env = [dict([(k,v.clone()) for (k,v) in e.iteritems()]) for e in fn.env]
+                new_env.append(new_level)
 
-                    return interpret(fn.body,new_env,fn)
+                return interpret(fn.body,new_env,fn)
+        elif isinstance(fn,BuiltIn):
+            if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
+                return fn
+            else:
+                arguments = []
+
+                if len(atom.orderArgs) < len(fn.order):
+                    raise Exception('Can\'t cover order arguments!')
+
+                if len(atom.orderArgs) > len(fn.order) and not fn.hasOrderVar:
+                    raise Exception('Too many order arguments!')
+
+                if len(atom.namedArgs) > 0:
+                    name = interpret(atom.namedArgs[0].name,env,curr_func)
+
+                    if not isinstance(name,Symbol):
+                        raise Exception('Named argument name isn\'t Symbol!')
+
+                    raise Exception('Function does not have argument "' + name.value + '"!')
+
+                for arg in atom.orderArgs:
+                    arguments.append(interpret(arg,env,curr_func))
+
+                return fn.func(*arguments)
         elif isinstance(fn,Dict):
             if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
                 return fn
