@@ -168,7 +168,7 @@ def tokenize(stream):
                (Dollar,re.compile(r'[$]'),0),
                (Boolean,re.compile(r'#T|#F'),0),
                (Number,re.compile(r'-?[0-9]+(\.[0-9]+)?'),0),
-               (Symbol,re.compile(r'[a-zA-Z_]([a-zA-Z0-9-_]|:)*'),0),
+               (Symbol,re.compile(r'[a-zA-Z_]([a-zA-Z0-9-_\?]|:)*'),0),
                (String,re.compile(r'[\']([^\']*)[\']'),1),
                (StringEval,re.compile(r'[`]([^`]*)[`]'),1),
                (FuncBeg,re.compile(r'[[]'),0),
