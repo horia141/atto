@@ -5,6 +5,8 @@ import Interpreter
 import BuiltIns.Utils
 import BuiltIns.Boolean
 import BuiltIns.Number
+import BuiltIns.Symbol
+import BuiltIns.String
 
 def doit(program):
     a = Stream.Buffer(program)
@@ -47,6 +49,9 @@ def doit(program):
                  'pow':        Interpreter.BuiltIn(BuiltIns.Number.Pow),
                  'abs':        Interpreter.BuiltIn(BuiltIns.Number.Abs),
                  'ceill':      Interpreter.BuiltIn(BuiltIns.Number.Ceill),
-                 'floor':      Interpreter.BuiltIn(BuiltIns.Number.Floor)}
+                 'floor':      Interpreter.BuiltIn(BuiltIns.Number.Floor),
+                 'is-symbol?': Interpreter.BuiltIn(BuiltIns.Symbol.IsSymbol),
+                 'is-string?': Interpreter.BuiltIn(BuiltIns.String.IsString),
+                 'cat':        Interpreter.BuiltIn(BuiltIns.String.Cat)}
 
     return Interpreter.interpret(c[1],[basic_env],None)
