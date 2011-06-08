@@ -1,9 +1,9 @@
 import Interpreter
-import BuiltIns.Utils
+import Core.Utils
 
-from BuiltIns.Utils import isString
-from BuiltIns.Utils import testString
-from BuiltIns.Utils import testStringVar
+from Core.Utils import isString
+from Core.Utils import testString
+from Core.Utils import testStringVar
 
 def IsString(a):
     assert(isinstance(a,Interpreter.InAtom))

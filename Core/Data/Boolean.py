@@ -1,9 +1,9 @@
 import Interpreter
-import BuiltIns.Utils
+import Core.Utils
 
-from BuiltIns.Utils import isBoolean
-from BuiltIns.Utils import testBoolean
-from BuiltIns.Utils import testBooleanVar
+from Core.Utils import isBoolean
+from Core.Utils import testBoolean
+from Core.Utils import testBooleanVar
 
 def IsBoolean(a):
     assert(isinstance(a,Interpreter.InAtom))

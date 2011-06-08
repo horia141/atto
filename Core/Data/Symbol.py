@@ -1,7 +1,7 @@
 import Interpreter
-import BuiltIns.Utils
+import Core.Utils
 
-from BuiltIns.Utils import isSymbol
+from Core.Utils import isSymbol
 
 def IsSymbol(a):
     assert(isinstance(a,Interpreter.InAtom))

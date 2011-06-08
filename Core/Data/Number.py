@@ -1,11 +1,11 @@
 import math
 
 import Interpreter
-import BuiltIns.Utils
+import Core.Utils
 
-from BuiltIns.Utils import isNumber
-from BuiltIns.Utils import testNumber
-from BuiltIns.Utils import testNumberVar
+from Core.Utils import isNumber
+from Core.Utils import testNumber
+from Core.Utils import testNumberVar
 
 def IsNumber(a):
     assert(isinstance(a,Interpreter.InAtom))
