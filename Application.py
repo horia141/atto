@@ -57,6 +57,7 @@ def doit(program):
                  'is-string?':      Interpreter.BuiltIn(Core.Data.String.IsString),
                  'cat':             Interpreter.BuiltIn(Core.Data.String.Cat),
                  'is-dict?':        Interpreter.BuiltIn(Core.Data.Dict.IsDict),
+                 'has-key?':        Interpreter.BuiltIn(Core.Data.Dict.HasKey),
                  'get':             Interpreter.BuiltIn(Core.Data.Dict.Get),
                  'set':             Interpreter.BuiltIn(Core.Data.Dict.Set),
                  'keys':            Interpreter.BuiltIn(Core.Data.Dict.Keys),
