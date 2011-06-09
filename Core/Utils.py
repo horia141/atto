@@ -1,3 +1,4 @@
+import Stream
 import Interpreter
 
 def isBoolean(x):
@@ -75,3 +76,53 @@ def testStringVar(va,m):
     assert(isinstance(m,str))
 
     map(lambda x: testString(x,m),va)
+
+def isDict(x):
+    assert(isinstance(x,Interpreter.InAtom))
+
+    return isinstance(x,Interpreter.Dict)
+
+def testDict(x,m):
+    assert(isinstance(x,Interpreter.InAtom))
+    assert(isinstance(m,str))
+
+    if not isDict(x):
+        raise Exception('Expected dict in <<BuiltIn "' + m + '">>!')
+
+def testDictVar(va,m):
+    assert(isinstance(va,tuple))
+    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
+    assert(isinstance(m,str))
+
+    map(lambda x: testDict(x,m),va)
+
+def isFunc(x):
+    assert(isinstance(x,Interpreter.InAtom))
+
+    return isinstance(x,Interpreter.Func)
+
+def testFunc(x,m):
+    assert(isinstance(x,Interpreter.InAtom))
+    assert(isinstance(m,str))
+
+    if not isFunc(x):
+        raise Exception('Expected func in <<BuiltIn "' + m + '">>!')
+
+def testFuncVar(va,m):
+    assert(isinstance(va,tuple))
+    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
+    assert(isinstance(m,str))
+
+    map(lambda x: testFunc(x,m),va)
+
+def buildArray(l):
+    assert(isinstance(l,list))
+    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),l)))
+
+    kvs = [(Interpreter.Symbol('Length'),
+            Interpreter.Number(len(l)))]
+
+    for i in range(0,len(l)):
+        kvs.append((Interpreter.Number(float(i)),l[i]))
+
+    return Interpreter.Dict(kvs)

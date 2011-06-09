@@ -324,14 +324,18 @@ class Dict(InAtom):
 
         raise Exception('Cannot find key "' + str(key) + '"!')
 
-    def lookupV(self,key):
-        for (k,v) in self.__keyvalues:
-            if isinstance(k,Boolean) or isinstance(k,Number) or \
-               isinstance(k,Symbol) or isinstance(k,String):
-                if key == k.value:
-                    return v
+    def update(self,key,value):
+        assert(isinstance(key,InAtom))
+        assert(isinstance(value,InAtom))
 
-        raise Exception('Cannot find key "' + key + '"!')
+        for i in range(0,len(self.__keyvalues)):
+            if self.__keyvalues[i][0] == key:
+                self.__keyvalues[i] = (key,value)
+                break
+        else:
+            self.__keyvalues.append((key,value))
+
+        return self                
 
     def clone(self):
         return Dict(self.__keyvalues)
