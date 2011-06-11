@@ -56,6 +56,11 @@ def doit(program):
                  'is-symbol?':      Interpreter.BuiltIn(Core.Data.Symbol.IsSymbol),
                  'is-string?':      Interpreter.BuiltIn(Core.Data.String.IsString),
                  'cat':             Interpreter.BuiltIn(Core.Data.String.Cat),
+                 'is-func?':        Interpreter.BuiltIn(Core.Data.Func.IsFunc),
+                 'apply':           Interpreter.BuiltIn(Core.Data.Func.Apply),
+                 'inject':          Interpreter.BuiltIn(Core.Data.Func.Inject),
+                 'curry':           Interpreter.BuiltIn(Core.Data.Func.Curry),
+                 'extend-env':      Interpreter.BuiltIn(Core.Data.Func.ExtendEnv),
                  'is-dict?':        Interpreter.BuiltIn(Core.Data.Dict.IsDict),
                  'has-key?':        Interpreter.BuiltIn(Core.Data.Dict.HasKey),
                  'get':             Interpreter.BuiltIn(Core.Data.Dict.Get),
@@ -63,4 +68,4 @@ def doit(program):
                  'keys':            Interpreter.BuiltIn(Core.Data.Dict.Keys),
                  'values':          Interpreter.BuiltIn(Core.Data.Dict.Values)}
 
-    return Interpreter.interpret(c[1],[basic_env],None)
+    return Interpreter.interpret(c[1],basic_env,None)

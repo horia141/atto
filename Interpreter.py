@@ -153,10 +153,9 @@ class Func(InAtom):
         assert(all(map(lambda x: isinstance(x,FuncArg),named_defs)))
         assert(named_var == None or isinstance(named_var,str))
         assert(isinstance(body,Parser.PsAtom))
-        assert(isinstance(env,list))
-        assert(all(map(lambda x: isinstance(x,dict),env)))
-        assert(all(map(lambda x: all(map(lambda y: isinstance(y,str),x.keys())),env)))
-        assert(all(map(lambda x: all(map(lambda y: isinstance(y,InAtom),x.values())),env)))
+        assert(isinstance(env,dict))
+        assert(all(map(lambda x: isinstance(x,str),env.iterkeys())))
+        assert(all(map(lambda x: isinstance(x,InAtom),env.itervalues())))
 
         self.__order = map(lambda x: x.clone(),order)
         self.__order_defs = map(lambda x: x.clone(),order_defs)
@@ -165,7 +164,7 @@ class Func(InAtom):
         self.__named_defs = map(lambda x: x.clone(),named_defs)
         self.__named_var = str(named_var) if named_var else None
         self.__body = body.clone()
-        self.__env = map(lambda x: dict([(str(y),x[y].clone()) for y in x]),env)
+        self.__env = dict([(str(k),v.clone()) for (k,v) in env.iteritems()])
 
     def __str__(self):
         def spIfNNil(ls):
@@ -346,10 +345,9 @@ class Dict(InAtom):
 
 def interpret(atom,env,curr_func):
     assert(isinstance(atom,Parser.PsAtom))
-    assert(isinstance(env,list))
-    assert(all(map(lambda x: isinstance(x,dict),env)))
-    assert(all(map(lambda x: all(map(lambda y: isinstance(y,str),x.keys())),env)))
-    assert(all(map(lambda x: all(map(lambda y: isinstance(y,InAtom),x.values())),env)))
+    assert(isinstance(env,dict))
+    assert(all(map(lambda x: isinstance(x,str),env.iterkeys())))
+    assert(all(map(lambda x: isinstance(x,InAtom),env.itervalues())))
     assert(curr_func == None or isinstance(curr_func,Func))
     
     if isinstance(atom,Parser.Call):
@@ -360,10 +358,8 @@ def interpret(atom,env,curr_func):
         elif isinstance(action,Number):
             raise Exception('Cannot call a number!')
         elif isinstance(action,Symbol):
-            for one_env in reversed(env):
-                if action.value in one_env:
-                    fn = one_env[action.value]
-                    break
+            if action.value in env:
+                fn = env[action.value]
             else:
                 raise Exception('Couldn\'t find name "' + action.value + '"!')
         elif isinstance(action,String):
@@ -461,17 +457,13 @@ def interpret(atom,env,curr_func):
                 if fn.hasNamedVar:
                     named_var[fn.namedVar] = Dict(named_var_kvs)
 
-                new_level = {}
-
-                new_level.update(order)
-                new_level.update(order_defs)
-                new_level.update(order_var)
-                new_level.update(named)
-                new_level.update(named_defs)
-                new_level.update(named_var)
-
-                new_env = [dict([(k,v.clone()) for (k,v) in e.iteritems()]) for e in fn.env]
-                new_env.append(new_level)
+                new_env = dict([(str(k),v.clone()) for (k,v) in env.iteritems()])
+                new_env.update(order)
+                new_env.update(order_defs)
+                new_env.update(order_var)
+                new_env.update(named)
+                new_env.update(named_defs)
+                new_env.update(named_var)
 
                 return interpret(fn.body,new_env,fn)
         elif isinstance(fn,BuiltIn):
