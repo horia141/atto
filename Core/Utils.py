@@ -13,13 +13,6 @@ def testBoolean(x,m):
     if not isBoolean(x):
         raise Exception('Expected boolean in <<BuiltIn "' + m + '">>!')
 
-def testBooleanVar(va,m):
-    assert(isinstance(va,tuple))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
-    assert(isinstance(m,str))
-
-    map(lambda x: testBoolean(x,m),va)
-
 def isNumber(x):
     assert(isinstance(x,Interpreter.InAtom))
 
@@ -31,13 +24,6 @@ def testNumber(x,m):
 
     if not isNumber(x):
         raise Exception('Expected number in <<BuiltIn "' + m + '">>!')
-
-def testNumberVar(va,m):
-    assert(isinstance(va,tuple))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
-    assert(isinstance(m,str))
-
-    map(lambda x: testNumber(x,m),va)
 
 def isSymbol(x):
     assert(isinstance(x,Interpreter.InAtom))
@@ -51,13 +37,6 @@ def testSymbol(x,m):
     if not isSymbol(x):
         raise Exception('Expected symbol in <<BuiltIn "' + m + '">>!')
 
-def testSymbolVar(va,m):
-    assert(isinstance(va,tuple))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
-    assert(isinstance(m,str))
-
-    map(lambda x: testSymbol(x,m),va)
-
 def isString(x):
     assert(isinstance(x,Interpreter.InAtom))
 
@@ -69,13 +48,6 @@ def testString(x,m):
 
     if not isString(x):
         raise Exception('Expected string in <<BuiltIn "' + m + '">>!')
-
-def testStringVar(va,m):
-    assert(isinstance(va,tuple))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
-    assert(isinstance(m,str))
-
-    map(lambda x: testString(x,m),va)
 
 def isDict(x):
     assert(isinstance(x,Interpreter.InAtom))
@@ -89,13 +61,6 @@ def testDict(x,m):
     if not isDict(x):
         raise Exception('Expected dict in <<BuiltIn "' + m + '">>!')
 
-def testDictVar(va,m):
-    assert(isinstance(va,tuple))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
-    assert(isinstance(m,str))
-
-    map(lambda x: testDict(x,m),va)
-
 def isFunc(x):
     assert(isinstance(x,Interpreter.InAtom))
 
@@ -108,12 +73,30 @@ def testFunc(x,m):
     if not isFunc(x):
         raise Exception('Expected func in <<BuiltIn "' + m + '">>!')
 
-def testFuncVar(va,m):
-    assert(isinstance(va,tuple))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
-    assert(isinstance(m,str))
+def argStarAsList(arg_star):
+    assert(isinstance(arg_star,Interpreter.Dict))
 
-    map(lambda x: testFunc(x,m),va)
+    length = arg_star.lookupWNone(Interpreter.Symbol('Length'))
+    assert(length)
+    new_ls = []
+
+    for i in range(0,length.value):
+        new_item = arg_star.lookupWNone(Interpreter.Number(i))
+        assert(new_item)
+        new_ls.append(new_item)
+
+    return new_ls
+
+def argPlusAsDict(arg_plus):
+    assert(isinstance(arg_plus,Interpreter.Dict))
+    assert(all(map(lambda x: isinstance(x,Interpreter.Symbol),arg_plus.keys)))
+
+    new_dict = {}
+
+    for (k,v) in arg_plus.keyvalues:
+        new_dict[k.value] = v
+
+    return new_dict
 
 def buildArray(l):
     assert(isinstance(l,list))

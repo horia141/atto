@@ -1,3 +1,13 @@
+* [14.06.2011-xx.xx.xxxx]
+  The "apply" function in  "Func" is very similar in function to what
+  happens when we "interpret" a call to a "Func" object. We should merge
+  the two functionalities (the "interpret" routine should call "apply"
+  after it has evaluated all the arguments).
+
+* [14.06.2011-xx.xx.xxxx]
+  Add proper tests for builtin functions which receive '_star' and
+  '_plus' arguments.
+
 + [07.06.2011-07.06.2011]
   > Added this, by way of "Finished support for new argument format for
   > functions." commit.

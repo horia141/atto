@@ -448,8 +448,6 @@ def parse(tokens,pos=0):
             del contents[-1]
 
             while cpos < len(contents) and state != FUNC_STOP :
-
-
                 if state == FUNC_ORDER:
                     if cpos + 3 < len(contents) and \
                        isinstance(contents[cpos+1],Tokenizer.CommonEqual) and \

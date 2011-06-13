@@ -9,3 +9,16 @@
   similar to "upvar" and "uplevel" can easily be defined as BuiltIns and
   we need to take care they aren't and functionality like this is not
   used.
+
+* Note that, from the builtin functions, the "Func" and "Dict" ones
+  should rely on functions from the respective object types, while other
+  modules can work with their objects in non-trivial ways. The first
+  restriction is because, the operations exposed by those two modules are
+  intrinsic to the language, and normally should have been expressed by
+  syntax. We don't have enough syntax for that, therfore we implement them
+  as "things that look like functions, but which could never be implemented
+  in the language itself". The other functions could reasonably be implemented
+  in the language, but for efficiency reasons are provided as builtins.
+  These must use only the provided interface of the objects (no altering of
+  internal state by writing to fields for example). The processing is 
+  non-trivial on the other hand.

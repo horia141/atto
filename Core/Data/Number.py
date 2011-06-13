@@ -5,23 +5,25 @@ import Core.Utils
 
 from Core.Utils import isNumber
 from Core.Utils import testNumber
-from Core.Utils import testNumberVar
+from Core.Utils import argStarAsList
 
 def IsNumber(a):
     assert(isinstance(a,Interpreter.InAtom))
 
     return Interpreter.Boolean(isNumber(a))
 
-def Add(a,b,*va):
+def Add(a,b,va_star):
     assert(isinstance(a,Interpreter.InAtom))
     assert(isinstance(b,Interpreter.InAtom))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
+    assert(isinstance(va_star,Interpreter.InAtom))
 
     testNumber(a,'Add')
     testNumber(b,'Add')
-    testNumberVar(va,'Add')
 
     res = a.value + b.value
+    va = argStarAsList(va_star)
+
+    map(lambda x: testNumber(x,'Add'),va)
 
     for i in va:
         res = res + i.value
@@ -35,16 +37,18 @@ def Inc(a):
 
     return Interpreter.Number(a.value + 1)
 
-def Sub(a,b,*va):
+def Sub(a,b,va_star):
     assert(isinstance(a,Interpreter.InAtom))
     assert(isinstance(b,Interpreter.InAtom))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
+    assert(isinstance(va_star,Interpreter.InAtom))
 
     testNumber(a,'Sub')
     testNumber(b,'Sub')
-    testNumberVar(va,'Sub')
 
     res = a.value - b.value
+    va = argStarAsList(va_star)
+
+    map(lambda x: testNumber(x,'Sub'),va)
 
     for i in va:
         res = res - i.value
@@ -58,32 +62,36 @@ def Dec(a):
 
     return Interpreter.Number(a.value - 1)
 
-def Mul(a,b,*va):
+def Mul(a,b,va_star):
     assert(isinstance(a,Interpreter.InAtom))
     assert(isinstance(b,Interpreter.InAtom))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
+    assert(isinstance(va_star,Interpreter.InAtom))
 
     testNumber(a,'Mul')
     testNumber(b,'Mul')
-    testNumberVar(va,'Mul')
 
     res = a.value * b.value
+    va = argStarAsList(va_star)
+
+    map(lambda x: testNumber(x,'Mul'),va)
 
     for i in va:
         res = res * i.value
 
     return Interpreter.Number(res)
 
-def Div(a,b,*va):
+def Div(a,b,va_star):
     assert(isinstance(a,Interpreter.InAtom))
     assert(isinstance(b,Interpreter.InAtom))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
+    assert(isinstance(va_star,Interpreter.InAtom))
 
     testNumber(a,'Div')
     testNumber(b,'Div')
-    testNumberVar(va,'Div')
 
     res = a.value / b.value
+    va = argStarAsList(va_star)
+
+    map(lambda x: testNumber(x,'Div'),va)
 
     for i in va:
         res = res / i.value

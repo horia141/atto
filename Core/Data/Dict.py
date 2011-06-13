@@ -4,6 +4,7 @@ import Core.Utils
 from Core.Utils import isDict
 from Core.Utils import testDict
 from Core.Utils import buildArray
+from Core.Utils import argStarAsList
 
 def IsDict(d):
     assert(isinstance(d,Interpreter.InAtom))
@@ -16,14 +17,7 @@ def HasKey(d,key):
 
     testDict(d,'HasKey')
 
-    try:
-        d.lookup(key)
-        return Interpreter.Boolean(True)
-    except Exception,e:
-        # Should use a proper error here. Don't
-        # want to stop the good exeptions from going
-        # up.
-        return Interpreter.Boolean(False)
+    return Interpreter.Boolean(d.lookupWNone(key) != None)
 
 def Get(d,key):
     assert(isinstance(d,Interpreter.InAtom))
@@ -33,13 +27,15 @@ def Get(d,key):
 
     return d.lookup(key).clone()
 
-def Set(d,key,value,*va):
+def Set(d,key,value,va_star):
     assert(isinstance(d,Interpreter.InAtom))
     assert(isinstance(key,Interpreter.InAtom))
     assert(isinstance(value,Interpreter.InAtom))
-    assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),va)))
+    assert(isinstance(va_star,Interpreter.InAtom))
 
     testDict(d,'Set')
+
+    va = argStarAsList(va_star)
 
     if len(va) % 2 != 0:
         raise Exception('<<BuiltIn "Set">> must be called with an even number of argument!')
@@ -56,11 +52,11 @@ def Keys(d):
 
     testDict(d,'Keys')
 
-    return buildArray([k for (k,v) in d.keyvalues])
+    return buildArray(d.keys)
 
 def Values(d):
     assert(isinstance(d,Interpreter.InAtom))
 
     testDict(d,'Values')
 
-    return buildArray([v for (k,v) in d.keyvalues])
+    return buildArray(d.values)

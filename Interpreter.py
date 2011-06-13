@@ -191,6 +191,93 @@ class Func(InAtom):
     def __eq__(self,other):
         return False
 
+    def apply(self,order_args,named_args):
+        assert(isinstance(order_args,list))
+        assert(all(map(lambda x: isinstance(x,InAtom),order_args)))
+        assert(isinstance(named_args,dict))
+        assert(all(map(lambda x: isinstance(x,str),named_args.keys())))
+        assert(all(map(lambda x: isinstance(x,InAtom),named_args.values())))
+
+        order = dict([(arg.name,arg.default) for arg in self.__order])
+        order_defs = dict([(arg.name,arg.default) for arg in self.__order_defs])
+        order_var = {}
+        order_pos = 0
+
+        named = dict([(arg.name,arg.default) for arg in self.__named])
+        named_defs = dict([(arg.name,arg.default) for arg in self.__named_defs])
+        named_var = {}
+        named_var_kvs = []
+        named_pos = 0
+
+        if len(order_args) < len(self.__order):
+            raise Exception('Can\'t cover order arguments!')
+
+        if len(order_args) > len(self.__order) + len(self.__order_defs) and not self.hasOrderVar:
+            raise Exception('Too many order arguments!')
+
+        if len(named_args) < len(self.__named):
+            raise Exception('Can\'t cover named arguments!')
+
+        if len(named_args) > len(self.__named) + len(self.__named_defs) and not fn.hasNamedVar:
+            raise Exception('Too many named arguments!')
+
+        for arg in self.__order:
+            order[arg.name] = order_args[order_pos]
+            order_pos = order_pos + 1
+
+        for arg in self.__order_defs:
+            if order_pos < len(order_args):
+                order_defs[arg.name] = order_args[order_pos]
+                order_pos = order_pos + 1
+            else:
+                break
+
+        if self.hasOrderVar:
+            var_kvs = [(Symbol('Length'),Number(len(order_args) - order_pos))]
+
+            for i in range(order_pos,len(order_args)):
+                var_kvs.append((Number(i - order_pos),order_args[i]))
+
+            order_var[self.__order_var] = Dict(var_kvs)
+
+        for (name,value) in named_args.iteritems():
+            # These cases are mutually exclusive and are the only four possibilities
+            # given our assumptions about Call and Func.
+            if name in named:
+                named[name] = value
+            elif name in named_defs:
+                named_defs[name] = value
+            elif fn.hasNamedVar:
+                named_var_kvs.append((Symbol(name),value))
+            else:
+                raise Exception('Function does not have argument "' + name + '"!')
+
+        if self.hasNamedVar:
+            named_var[self.__named_var] = Dict(named_var_kvs)
+
+        new_env = dict([(str(k),v.clone()) for (k,v) in self.__env.iteritems()])
+        new_env.update(order)
+        new_env.update(order_defs)
+        new_env.update(order_var)
+        new_env.update(named)
+        new_env.update(named_defs)
+        new_env.update(named_var)
+    
+        return interpret(self.__body,new_env,self)
+
+    def curry(self,va):
+        pass
+
+    def orderInject(self,order_arg):
+        assert(isinstance(order_arg,str))
+
+        self.__order.insert(0,FuncArg(order_arg,None))
+
+    def namedInject(self,named_arg):
+        assert(isinstance(named_arg,str))
+
+        self.__named.insert(0,FuncArg(named_arg,None))
+
     def clone(self):
         return Func(self.__order,self.__order_defs,self.__order_var,
                     self.__named,self.__named_defs,self.__named_var,
@@ -240,13 +327,77 @@ class BuiltIn(InAtom):
     def __init__(self,func):
         assert(hasattr(func,'__call__'))
 
-        arginfo = inspect.getargspec(func)
+        BUILTIN_ORDER = 0
+        BUILTIN_ORDER_VAR = 1
+        BUILTIN_NAMED = 2
+        BUILTIN_NAMED_VAR = 3
+        BUILTIN_STOP = 4
 
+        arginfo = inspect.getargspec(func)
+        state = BUILTIN_ORDER
+        order = []
+        order_var = None
+        named = []
+        named_var = None
+        pos = 0
+
+        assert(arginfo.varargs == None)
         assert(arginfo.keywords == None)
         assert(arginfo.defaults == None)
 
-        self.__order = [FuncArg(arg,None) for arg in arginfo.args]
-        self.__order_var = arginfo.varargs if arginfo.varargs else None
+        while pos < len(arginfo.args) and state != BUILTIN_STOP:
+            if state == BUILTIN_ORDER:
+                if arginfo.args[pos].endswith('_star'):
+                    state = BUILTIN_ORDER_VAR
+                    order_var = arginfo.args[pos]
+                    pos = pos + 1
+                elif arginfo.args[pos].endswith('_bang'):
+                    state = BUILTIN_NAMED
+                    named.append(FuncArg(arginfo.args[pos],None))
+                    pos = pos + 1
+                elif arginfo.args[pos].endswith('_plus'):
+                    state = BUILTIN_NAMED_VAR
+                    named_var = arginfo.args[pos]
+                    pos = pos + 1
+                else:
+                    state = BUILTIN_ORDER
+                    order.append(FuncArg(arginfo.args[pos],None))
+                    pos = pos + 1
+            elif state == BUILTIN_ORDER_VAR:
+                if arginfo.args[pos].endswith('_star'):
+                    raise Exception('Only one variable order argument allowed!')
+                elif arginfo.args[pos].endswith('_bang'):
+                    state = BUILTIN_NAMED
+                    named.append(FuncArg(arginfo.args[pos],None))
+                    pos = pos + 1
+                elif arginfo.args[pos].endswith('_plus'):
+                    state = BUILTIN_NAMED_VAR
+                    named_var = arginfo.args[pos]
+                    pos = pos + 1
+                else:
+                    raise Exception('Cannot use order arguments after variable one!')
+            elif state == BUILTIN_NAMED:
+                if arginfo.args[pos].endswith('_star'):
+                    raise Exception('Cannot use variable order argument after named ones!')
+                elif arginfo.args[pos].endswith('_bang'):
+                    state = BUILTIN_NAMED
+                    named.append(FuncArg(arginfo.args[pos],None))
+                    pos = pos + 1
+                elif arginfo.args[pos].endswith('_plus'):
+                    state = BUILTIN_NAMED_VAR
+                    named_var = arginfo.args[pos]
+                    pos = pos + 1
+                else:
+                    raise Exception('Cannot use order arguments after named ones!')
+            elif state == BUILTIN_NAMED_VAR:
+                raise Exception('Invalid argument after named variable one!')
+            else:
+                raise Exception('Critical Error: Invalid BuiltIn FSM Path!')
+
+        self.__order = order
+        self.__order_var = order_var
+        self.__named = named
+        self.__named_var = named_var
         self.__func = func
 
     def __str__(self):
@@ -255,6 +406,8 @@ class BuiltIn(InAtom):
 
         return '[' + ' '.join(map(str,self.__order)) + spIfNNil(self.__order) + \
                      (str(self.__order_var) + '* ' if self.__order_var else '') + \
+                     ' '.join(map(str,self.__named)) + spIfNNil(self.__named) + \
+                     (str(self.__named_var) + '* ' if self.__named_var else '') + \
                      '<<BuiltIn "' + self.__func.__name__ + '">>]'
 
     def __repr__(self):
@@ -272,12 +425,32 @@ class BuiltIn(InAtom):
         return self.__order
 
     @property
+    def orderDefs(self):
+        return []
+
+    @property
     def hasOrderVar(self):
         return self.__order_var != None
 
     @property
     def orderVar(self):
         return self.__order_var
+
+    @property
+    def named(self):
+        return self.__named
+
+    @property
+    def namedDefs(self):
+        return []
+
+    @property
+    def hasNamedVar(self):
+        return self.__named_var != None
+
+    @property
+    def namedVar(self):
+        return self.__named_var
 
     @property
     def func(self):
@@ -314,6 +487,15 @@ class Dict(InAtom):
 
         return True
 
+    def lookupWNone(self,key):
+        assert(isinstance(key,InAtom))
+
+        for (k,v) in self.__keyvalues:
+            if key == k:
+                return v
+
+        return None
+
     def lookup(self,key):
         assert(isinstance(key,InAtom))
 
@@ -334,7 +516,7 @@ class Dict(InAtom):
         else:
             self.__keyvalues.append((key,value))
 
-        return self                
+        return self
 
     def clone(self):
         return Dict(self.__keyvalues)
@@ -342,6 +524,14 @@ class Dict(InAtom):
     @property
     def keyvalues(self):
         return self.__keyvalues
+
+    @property
+    def keys(self):
+        return [k for (k,v) in self.__keyvalues]
+
+    @property
+    def values(self):
+        return [v for (k,v) in self.__keyvalues]
 
 def interpret(atom,env,curr_func):
     assert(isinstance(atom,Parser.PsAtom))
@@ -391,7 +581,7 @@ def interpret(atom,env,curr_func):
                 return fn
             else:
                 raise Exception('Cannot apply arguments to a string!')
-        elif isinstance(fn,Func):
+        elif isinstance(fn,Func) or isinstance(fn,BuiltIn):
             if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
                 return fn
             else:
@@ -429,7 +619,7 @@ def interpret(atom,env,curr_func):
                     else:
                         break
 
-                if fn.hasOrderVar and order_pos < len(atom.orderArgs):
+                if fn.hasOrderVar:
                     var_kvs = [(Symbol('Length'),Number(len(atom.orderArgs) - order_pos))]
 
                     for i in range(order_pos,len(atom.orderArgs)):
@@ -456,40 +646,27 @@ def interpret(atom,env,curr_func):
 
                 if fn.hasNamedVar:
                     named_var[fn.namedVar] = Dict(named_var_kvs)
+                    
+                if isinstance(fn,Func):
+                    new_env = dict([(str(k),v.clone()) for (k,v) in fn.env.iteritems()])
+                    new_env.update(order)
+                    new_env.update(order_defs)
+                    new_env.update(order_var)
+                    new_env.update(named)
+                    new_env.update(named_defs)
+                    new_env.update(named_var)
+    
+                    return interpret(fn.body,new_env,fn)
+                else:
+                    new_env = {}
+                    new_env.update(order)
+                    new_env.update(order_defs)
+                    new_env.update(order_var)
+                    new_env.update(named)
+                    new_env.update(named_defs)
+                    new_env.update(named_var)
 
-                new_env = dict([(str(k),v.clone()) for (k,v) in env.iteritems()])
-                new_env.update(order)
-                new_env.update(order_defs)
-                new_env.update(order_var)
-                new_env.update(named)
-                new_env.update(named_defs)
-                new_env.update(named_var)
-
-                return interpret(fn.body,new_env,fn)
-        elif isinstance(fn,BuiltIn):
-            if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
-                return fn
-            else:
-                arguments = []
-
-                if len(atom.orderArgs) < len(fn.order):
-                    raise Exception('Can\'t cover order arguments!')
-
-                if len(atom.orderArgs) > len(fn.order) and not fn.hasOrderVar:
-                    raise Exception('Too many order arguments!')
-
-                if len(atom.namedArgs) > 0:
-                    name = interpret(atom.namedArgs[0].name,env,curr_func)
-
-                    if not isinstance(name,Symbol):
-                        raise Exception('Named argument name isn\'t Symbol!')
-
-                    raise Exception('Function does not have argument "' + name.value + '"!')
-
-                for arg in atom.orderArgs:
-                    arguments.append(interpret(arg,env,curr_func))
-
-                return fn.func(*arguments)
+                    return fn.func(**new_env)
         elif isinstance(fn,Dict):
             if len(atom.orderArgs) == 0 and len(atom.namedArgs) == 0:
                 return fn
