@@ -10,6 +10,7 @@ import Core.Data.Symbol
 import Core.Data.String
 import Core.Data.Func
 import Core.Data.Dict
+import Core.Control.Flow
 
 def doit(program):
     a = Stream.Buffer(program)
@@ -68,6 +69,7 @@ def doit(program):
                  'get':             Interpreter.BuiltIn(Core.Data.Dict.Get),
                  'set':             Interpreter.BuiltIn(Core.Data.Dict.Set),
                  'keys':            Interpreter.BuiltIn(Core.Data.Dict.Keys),
-                 'values':          Interpreter.BuiltIn(Core.Data.Dict.Values)}
+                 'values':          Interpreter.BuiltIn(Core.Data.Dict.Values),
+                 'if':              Interpreter.BuiltIn(Core.Control.Flow.If)}
 
     return Interpreter.interpret(c[1],basic_env,None)

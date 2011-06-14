@@ -73,6 +73,27 @@ def testFunc(x,m):
     if not isFunc(x):
         raise Exception('Expected func in <<BuiltIn "' + m + '">>!')
 
+def isBlock(x):
+    assert(isinstance(x,Interpreter.InAtom))
+
+    if isinstance(x,Interpreter.Func) and \
+            len(x.order) == 0 and \
+            len(x.orderDefs) == 0 and \
+            not x.hasOrderVar and \
+            len(x.named) == 0 and \
+            len(x.namedDefs) == 0 and \
+            not x.hasNamedVar:
+        return True
+    else:
+        return False
+
+def testBlock(x,m):
+    assert(isinstance(x,Interpreter.InAtom))
+    assert(isinstance(m,str))
+
+    if not isBlock(x):
+        raise Exception('Expected block in <<BuiltIn "' + m + '">>!')
+
 def argStarAsList(arg_star):
     assert(isinstance(arg_star,Interpreter.Dict))
 

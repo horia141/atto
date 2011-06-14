@@ -1,3 +1,8 @@
+* [15.06.2011-xx.xx.xxxx]
+  Make builtin functions "Callable" agnostic. They should work on any
+  callable object, with the caveat that most operations raise an exception
+  on "BuiltIn" objects.
+
 + [15.06.2011-15.06.2011]
   > Made the necessary modifications.
 

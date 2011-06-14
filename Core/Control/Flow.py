@@ -9,15 +9,21 @@ def If(test,caseT,caseF):
     assert(isinstance(caseT,Interpreter.InAtom))
     assert(isinstance(caseF,Interpreter.InAtom))
 
-    testBoolean(test)
+    testBoolean(test,'If')
 
     if test.value:
-        if isBlock(testT):
-            return $eval_somehow_testT$
+        if isBlock(caseT):
+            return caseT.apply([],{})
         else:
-            return testT
+            return caseT
     else:
-        if isBlock(testF):
-            return $eval_somehow_testF$
+        if isBlock(caseF):
+            return caseF.apply([],{})
         else:
-            return testF
+            return caseF
+
+def Let(va_star):
+    pass
+
+def Seq(va_star):
+    pass
