@@ -216,7 +216,7 @@ class Callable(InAtom):
         if len(named_args) < len(self.__named):
             raise Exception('Can\'t cover named arguments!')
 
-        if len(named_args) > len(self.__named) + len(self.__named_defs) and not fn.hasNamedVar:
+        if len(named_args) > len(self.__named) + len(self.__named_defs) and not self.hasNamedVar:
             raise Exception('Too many named arguments!')
 
         for arg in self.__order:
@@ -245,7 +245,7 @@ class Callable(InAtom):
                 named[name] = value
             elif name in named_defs:
                 named_defs[name] = value
-            elif fn.hasNamedVar:
+            elif self.hasNamedVar:
                 named_var_kvs.append((Symbol(name),value))
             else:
                 raise Exception('Function does not have argument "' + name + '"!')
