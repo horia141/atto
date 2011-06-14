@@ -1,3 +1,8 @@
+* [15.06.2011-xx.xx.xxxx]
+  Change "lookup","lookupWNone","update" etc. functions to "simpler
+  names": "get","set" etc. Also, replace "lookup" with "lookupWName"
+  and update the builtin functions to work accordingly.
+
 * [14.06.2011-xx.xx.xxxx]
   The "apply" function in  "Func" is very similar in function to what
   happens when we "interpret" a call to a "Func" object. We should merge
