@@ -17,7 +17,7 @@ def HasKey(d,key):
 
     testDict(d,'HasKey')
 
-    return Interpreter.Boolean(d.haskey(key))
+    return Interpreter.Boolean(d.hasKey(key))
 
 def Get(d,key):
     assert(isinstance(d,Interpreter.InAtom))

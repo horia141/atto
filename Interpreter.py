@@ -109,7 +109,7 @@ class String(InAtom):
     def value(self):
         return self.__value
 
-class FuncArg(object):
+class Argument(object):
     def __init__(self,name,default):
         assert(isinstance(name,str))
         assert(default == None or isinstance(default,InAtom))
@@ -122,11 +122,11 @@ class FuncArg(object):
                ('=' + str(self.__default) if self.__default else '')
 
     def __repr__(self):
-        return 'Interpreter.FuncArg(' + repr(self.__name) + ',' + \
-                                        repr(self.__default) + ')'
+        return 'Interpreter.Argument(' + repr(self.__name) + ',' + \
+                                         repr(self.__default) + ')'
 
     def clone(self):
-        return FuncArg(self.__name,self.__default)
+        return Argument(self.__name,self.__default)
 
     @property
     def name(self):
@@ -143,14 +143,14 @@ class FuncArg(object):
 class Callable(InAtom):
     def __init__(self,order,order_defs,order_var,named,named_defs,named_var):
         assert(isinstance(order,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),order)))
+        assert(all(map(lambda x: isinstance(x,Argument),order)))
         assert(isinstance(order_defs,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),order_defs)))
+        assert(all(map(lambda x: isinstance(x,Argument),order_defs)))
         assert(order_var == None or isinstance(order_var,str))
         assert(isinstance(named,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),named)))
+        assert(all(map(lambda x: isinstance(x,Argument),named)))
         assert(isinstance(named_defs,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),named_defs)))
+        assert(all(map(lambda x: isinstance(x,Argument),named_defs)))
         assert(named_var == None or isinstance(named_var,str))
 
         self.__order = map(lambda x: x.clone(),order)
@@ -264,12 +264,12 @@ class Callable(InAtom):
     def orderInject(self,order_arg):
         assert(isinstance(order_arg,str))
 
-        self.__order.insert(0,FuncArg(order_arg,None))
+        self.__order.insert(0,Argument(order_arg,None))
 
     def namedInject(self,named_arg):
         assert(isinstance(named_arg,str))
 
-        self.__named.insert(0,FuncArg(named_arg,None))
+        self.__named.insert(0,Argument(named_arg,None))
 
     def clone(self):
         return Func(self.__order,self.__order_defs,self.__order_var,
@@ -310,14 +310,14 @@ class Callable(InAtom):
 class Func(Callable):
     def __init__(self,order,order_defs,order_var,named,named_defs,named_var,body,env):
         assert(isinstance(order,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),order)))
+        assert(all(map(lambda x: isinstance(x,Argument),order)))
         assert(isinstance(order_defs,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),order_defs)))
+        assert(all(map(lambda x: isinstance(x,Argument),order_defs)))
         assert(order_var == None or isinstance(order_var,str))
         assert(isinstance(named,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),named)))
+        assert(all(map(lambda x: isinstance(x,Argument),named)))
         assert(isinstance(named_defs,list))
-        assert(all(map(lambda x: isinstance(x,FuncArg),named_defs)))
+        assert(all(map(lambda x: isinstance(x,Argument),named_defs)))
         assert(named_var == None or isinstance(named_var,str))
         assert(isinstance(body,Parser.PsAtom))
         assert(isinstance(env,dict))
@@ -352,6 +352,27 @@ class Func(Callable):
         new_env.update(named_var)
     
         return interpret(self.__body,new_env,self)
+
+    def envHasKey(self,key):
+        assert(isinstance(key,str))
+
+        return key in self.__env
+
+    def envGet(self,key):
+        assert(isinstance(key,str))
+
+        if key in self.__env:
+            return self.__env[key]
+        else:
+            return None
+
+    def envSet(self,key,value):
+        assert(isinstance(key,str))
+        assert(isinstance(value,InAtom))
+
+        self.__env[key] = value
+
+        return self
 
     def clone(self):
         return Func(self.order,self.orderDefs,self.orderVar,
@@ -396,7 +417,7 @@ class BuiltIn(Callable):
                     pos = pos + 1
                 elif arginfo.args[pos].endswith('_bang'):
                     state = BUILTIN_NAMED
-                    named.append(FuncArg(arginfo.args[pos],None))
+                    named.append(Argument(arginfo.args[pos],None))
                     pos = pos + 1
                 elif arginfo.args[pos].endswith('_plus'):
                     state = BUILTIN_NAMED_VAR
@@ -404,14 +425,14 @@ class BuiltIn(Callable):
                     pos = pos + 1
                 else:
                     state = BUILTIN_ORDER
-                    order.append(FuncArg(arginfo.args[pos],None))
+                    order.append(Argument(arginfo.args[pos],None))
                     pos = pos + 1
             elif state == BUILTIN_ORDER_VAR:
                 if arginfo.args[pos].endswith('_star'):
                     raise Exception('Only one variable order argument allowed!')
                 elif arginfo.args[pos].endswith('_bang'):
                     state = BUILTIN_NAMED
-                    named.append(FuncArg(arginfo.args[pos],None))
+                    named.append(Argument(arginfo.args[pos],None))
                     pos = pos + 1
                 elif arginfo.args[pos].endswith('_plus'):
                     state = BUILTIN_NAMED_VAR
@@ -424,7 +445,7 @@ class BuiltIn(Callable):
                     raise Exception('Cannot use variable order argument after named ones!')
                 elif arginfo.args[pos].endswith('_bang'):
                     state = BUILTIN_NAMED
-                    named.append(FuncArg(arginfo.args[pos],None))
+                    named.append(Argument(arginfo.args[pos],None))
                     pos = pos + 1
                 elif arginfo.args[pos].endswith('_plus'):
                     state = BUILTIN_NAMED_VAR
@@ -445,7 +466,7 @@ class BuiltIn(Callable):
         fullname = inspect.getmodule(self.__func).__name__ + '.' + self.__func.__name__
         return 'Interpreter.BuiltIn(' + fullname + ')'
 
-    def _sp__str(self):
+    def _sp_str(self):
         return '<<BuiltIn "' + self.__func.__name__ + '">>'
 
     def _sp_apply(self,order,order_defs,order_var,named,named_defs,named_var):
@@ -497,7 +518,7 @@ class Dict(InAtom):
 
         return True
 
-    def haskey(self,key):
+    def hasKey(self,key):
         assert(isinstance(key,InAtom))
 
         for (k,v) in self.__keyvalues:
@@ -622,7 +643,7 @@ def interpret(atom,env,curr_func):
             if name.value in names:
                 raise Exception('Argument "' + name.value + '" is used twice!')
 
-            target.append(FuncArg(name.value,default))
+            target.append(Argument(name.value,default))
             names.add(name.value)
 
         order = []

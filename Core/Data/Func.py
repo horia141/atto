@@ -23,6 +23,18 @@ def Apply(f,va_star,va_plus):
     return f.apply(argStarAsList(va_star),
                    argPlusAsDict(va_plus))
 
+def Curry(f,va_star,va_plus):
+    assert(isinstance(f,Interpreter.InAtom))
+    assert(isinstance(va_star,Interpreter.InAtom))
+    assert(isinstance(va_plus,Interpreter.InAtom))
+
+    testFunc(f,'Curry')
+
+    new_f = f.clone()
+
+    return new_f.curry(argStarAsList(va_star),
+                       argPlusAsDict(va_plus))
+
 def Inject(f,arg,named):
     assert(isinstance(f,Interpreter.InAtom))
     assert(isinstance(arg,Interpreter.InAtom))
@@ -41,23 +53,47 @@ def Inject(f,arg,named):
 
     return new_f
 
-def Curry(f,va_star,va_plus):
+def EnvHasKey(f,key):
     assert(isinstance(f,Interpreter.InAtom))
+    assert(isinstance(key,Interpreter.InAtom))
+
+    testFunc(f,'EnvHasKey')
+    testSymbol(key,'EnvHasKey')
+
+    return Interpreter.Boolean(f.envHasKey(key.value))
+
+def EnvGet(f,key):
+    assert(isinstance(f,Interpreter.InAtom))
+    assert(isinstance(key,Interpreter.InAtom))
+
+    testFunc(f,'EnvGet')
+    testSymbol(key,'EnvGet')
+
+    v = f.envGet(key.value)
+
+    if v:
+        return v.clone()
+    else:
+        raise Exception('Environment does not have key "' + key.value + '"!')
+
+def EnvSet(f,key,value,va_star):
+    assert(isinstance(f,Interpreter.InAtom))
+    assert(isinstance(key,Interpreter.InAtom))
+    assert(isinstance(value,Interpreter.InAtom))
     assert(isinstance(va_star,Interpreter.InAtom))
-    assert(isinstance(va_plus,Interpreter.InAtom))
 
-    testFunc(f,'Curry')
+    testFunc(f,'EnvSet')
+    testSymbol(key,'EnvSet')
 
-    new_f = f.clone()
+    va = argStarAsList(va_star)
 
-    return new_f.curry(argStarAsList(va_star),
-                       argPlusAsDict(va_plus))
+    if len(va) % 2 != 0:
+        raise Exception('<<BuiltIn "EnvSet">> must be called with an even number of argument!')
 
-def EnvHasKey(f):
-    pass
+    new_f = f.clone().envSet(key.value,value)
 
-def EnvGet(f):
-    pass
+    for i in range(0,len(va),2):
+        testSymbol(va[i],'EnvSet')
+        new_f.envSet(va[i].value,va[i+1])
 
-def EnvSet(f):
-    pass
+    return new_f
