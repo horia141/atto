@@ -497,7 +497,16 @@ class Dict(InAtom):
 
         return True
 
-    def lookupWNone(self,key):
+    def haskey(self,key):
+        assert(isinstance(key,InAtom))
+
+        for (k,v) in self.__keyvalues:
+            if key == k:
+                return True
+
+        return False
+
+    def get(self,key):
         assert(isinstance(key,InAtom))
 
         for (k,v) in self.__keyvalues:
@@ -506,16 +515,7 @@ class Dict(InAtom):
 
         return None
 
-    def lookup(self,key):
-        assert(isinstance(key,InAtom))
-
-        for (k,v) in self.__keyvalues:
-            if key == k:
-                return v
-
-        raise Exception('Cannot find key "' + str(key) + '"!')
-
-    def update(self,key,value):
+    def set(self,key,value):
         assert(isinstance(key,InAtom))
         assert(isinstance(value,InAtom))
 
@@ -589,7 +589,7 @@ def interpret(atom,env,curr_func):
             return fn.apply(order_args,named_args)
         elif isinstance(fn,Dict):
             if len(atom.orderArgs) == 1 and len(atom.namedArgs) == 0:
-                return fn.lookup(interpreter(atom.orderArgs[0],env,curr_func))
+                return fn.get(interpret(atom.orderArgs[0],env,curr_func))
             else:
                 raise Exception('Cannot apply more than one argument to a dictionary!')
         else:

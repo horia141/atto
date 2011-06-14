@@ -1,9 +1,15 @@
-* [15.06.2011-xx.xx.xxxx]
++ [15.06.2011-15.06.2011]
+  > Made the necessary modifications.
+
   Change "lookup","lookupWNone","update" etc. functions to "simpler
   names": "get","set" etc. Also, replace "lookup" with "lookupWName"
   and update the builtin functions to work accordingly.
 
-* [14.06.2011-xx.xx.xxxx]
++ [14.06.2011-15.06.2011]
+  > Did the necessary refactoring. The code is much simpler now. I've
+  > also added a "InAtom" derived class, called "Callable" which describes
+  > objects which can be called (such as functions and builtins).
+
   The "apply" function in  "Func" is very similar in function to what
   happens when we "interpret" a call to a "Func" object. We should merge
   the two functionalities (the "interpret" routine should call "apply"

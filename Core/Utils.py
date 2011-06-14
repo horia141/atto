@@ -76,12 +76,12 @@ def testFunc(x,m):
 def argStarAsList(arg_star):
     assert(isinstance(arg_star,Interpreter.Dict))
 
-    length = arg_star.lookupWNone(Interpreter.Symbol('Length'))
+    length = arg_star.get(Interpreter.Symbol('Length'))
     assert(length)
     new_ls = []
 
     for i in range(0,length.value):
-        new_item = arg_star.lookupWNone(Interpreter.Number(i))
+        new_item = arg_star.get(Interpreter.Number(i))
         assert(new_item)
         new_ls.append(new_item)
 

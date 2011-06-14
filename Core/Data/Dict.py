@@ -17,7 +17,7 @@ def HasKey(d,key):
 
     testDict(d,'HasKey')
 
-    return Interpreter.Boolean(d.lookupWNone(key) != None)
+    return Interpreter.Boolean(d.haskey(key))
 
 def Get(d,key):
     assert(isinstance(d,Interpreter.InAtom))
@@ -25,7 +25,12 @@ def Get(d,key):
 
     testDict(d,'Get')
 
-    return d.lookup(key).clone()
+    v = d.get(key)
+
+    if v:
+        return v.clone()
+    else:
+        raise Exception('Dictionary does not have key "' + str(key) + '"!')
 
 def Set(d,key,value,va_star):
     assert(isinstance(d,Interpreter.InAtom))
@@ -40,10 +45,10 @@ def Set(d,key,value,va_star):
     if len(va) % 2 != 0:
         raise Exception('<<BuiltIn "Set">> must be called with an even number of argument!')
 
-    new_d = d.clone().update(key,value)
+    new_d = d.clone().set(key,value)
 
     for i in range(0,len(va),2):
-        new_d.update(va[i],va[i+1])
+        new_d.set(va[i],va[i+1])
 
     return new_d
 
