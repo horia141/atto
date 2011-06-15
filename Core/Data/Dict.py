@@ -28,7 +28,7 @@ def Get(d,key):
     v = d.get(key)
 
     if v:
-        return v.clone()
+        return v
     else:
         raise Exception('Dictionary does not have key "' + str(key) + '"!')
 

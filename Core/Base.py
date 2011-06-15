@@ -30,19 +30,19 @@ def Eq(x,y):
     assert(isinstance(x,Interpreter.InAtom))
     assert(isinstance(y,Interpreter.InAtom))
 
-    return x == y
+    return Interpreter.Boolean(x == y)
 
 def Neq(x,y):
     assert(isinstance(x,Interpreter.InAtom))
     assert(isinstance(y,Interpreter.InAtom))
 
-    return x != y
+    return Interpreter.Boolean(x != y)
 
 def SameType(x,y):
     assert(isinstance(x,Interpreter.InAtom))
     assert(isinstance(y,Interpreter.InAtom))
 
-    return isinstance(x,y.__class__)
+    return Interpreter.Boolean(isinstance(x,y.__class__))
 
 def Module():
     pass

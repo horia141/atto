@@ -7,13 +7,13 @@ class PsAtom(object):
     def __init__(self,geometry):
         assert(isinstance(geometry,Stream.Geometry))
 
-        self.__geometry = geometry.clone()
+        self.__geometry = geometry
 
     def __str__(self):
         return 'PsAtom'
 
     def __repr__(self):
-        return 'Parser.PsAtom(' + repr(self.__geometry) + ')'
+        return str(self)
 
     @property
     def geometry(self):
@@ -24,17 +24,11 @@ class CallNamedArg(object):
         assert(isinstance(name,PsAtom))
         assert(isinstance(value,PsAtom))
 
-        self.__name = name.clone()
-        self.__value = value.clone()
+        self.__name = name
+        self.__value = value
 
     def __str__(self):
         return str(self.__name) + '=' + str(self.__value)
-
-    def __repr__(self):
-        return 'Parser.CallNamedArg(' + repr(self.__name) + ',' + repr(self.__value) + ')'
-
-    def clone(self):
-        return CallNamedArg(self.__name,self.__value)
 
     @property
     def name(self):
@@ -54,23 +48,14 @@ class Call(PsAtom):
 
         super(Call,self).__init__(geometry)
 
-        self.__action = action.clone()
-        self.__order_args = map(lambda x: x.clone(),order_args)
-        self.__named_args = map(lambda x: x.clone(),named_args)
+        self.__action = action
+        self.__order_args = order_args
+        self.__named_args = named_args
 
     def __str__(self):
         return '(' + str(self.__action) + \
                 (' ' + ' '.join(map(str,self.__order_args)) if self.__order_args else '') + \
                 (' ' + ' '.join(map(str,self.__named_args)) if self.__named_args else '') + ')'
-
-    def __repr__(self):
-        return 'Parser.Call(' + repr(self.__action) + ',' + \
-                           '[' + ','.join(map(repr,self.__order_args)) + '],' + \
-                           '[' + ','.join(map(repr,self.__named_args)) + '],' + \
-                           repr(self.geometry) + ')'
-
-    def clone(self):
-        return Call(self.__action,self.__order_args,self.__named_args,self.geometry)
 
     @property
     def action(self):
@@ -90,16 +75,10 @@ class Self(PsAtom):
         
         super(Self,self).__init__(geometry)
 
-        self.__text = str(text)
+        self.__text = text
 
     def __str__(self):
         return self.__text
-
-    def __repr__(self):
-        return 'Parser.Self(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
-
-    def clone(self):
-        return Self(self.__text,self.geometry)
 
     @property
     def text(self):
@@ -111,16 +90,10 @@ class Boolean(PsAtom):
         
         super(Boolean,self).__init__(geometry)
 
-        self.__text = str(text)
+        self.__text = text
 
     def __str__(self):
         return self.__text
-
-    def __repr__(self):
-        return 'Parser.Boolean(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
-
-    def clone(self):
-        return Boolean(self.__text,self.geometry)
 
     @property
     def text(self):
@@ -132,16 +105,10 @@ class Number(PsAtom):
         
         super(Number,self).__init__(geometry)
 
-        self.__text = str(text)
+        self.__text = text
 
     def __str__(self):
         return self.__text
-
-    def __repr__(self):
-        return 'Parser.Number(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
-
-    def clone(self):
-        return Number(self.__text,self.geometry)
 
     @property
     def text(self):
@@ -153,16 +120,10 @@ class Symbol(PsAtom):
 
         super(Symbol,self).__init__(geometry)
 
-        self.__text = str(text)
+        self.__text = text
 
     def __str__(self):
         return self.__text
-
-    def __repr__(self):
-        return 'Parser.Symbol(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
-
-    def clone(self):
-        return Symbol(self.__text,self.geometry)
 
     @property
     def text(self):
@@ -174,16 +135,10 @@ class String(PsAtom):
 
         super(String,self).__init__(geometry)
 
-        self.__text = str(text)
+        self.__text = text
 
     def __str__(self):
         return '\'' + self.__text + '\''
-
-    def __repr__(self):
-        return 'Parser.String(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
-
-    def clone(self):
-        return String(self.__text,self.geometry)
 
     @property
     def text(self):
@@ -195,16 +150,10 @@ class StringEval(PsAtom):
 
         super(StringEval,self).__init__(geometry)
 
-        self.__text = str(text)
+        self.__text = text
 
     def __str__(self):
         return '`' + self.__text + '`'
-
-    def __repr__(self):
-        return 'Parser.StringEval(' + repr(self.__text) + ',' + repr(self.geometry) + ')'
-
-    def clone(self):
-        return Symbol(self.__text,self.geometry)
 
     @property
     def text(self):
@@ -215,19 +164,12 @@ class FuncArg(object):
         assert(isinstance(name,PsAtom))
         assert(default == None or isinstance(default,PsAtom))
 
-        self.__name = name.clone()
-        self.__default = default.clone() if default != None else None
+        self.__name = name
+        self.__default = default
 
     def __str__(self):
         return str(self.__name) + \
                ('=' + str(self.__default) if self.__default else '')
-
-    def __repr__(self):
-        return 'Parser.FuncArg(' + repr(self.__name) + ',' + \
-                                   repr(self.__default) + ')'
-
-    def clone(self):
-        return FuncArg(self.__name,self.__default)
 
     @property
     def name(self):
@@ -257,13 +199,13 @@ class Func(PsAtom):
 
         super(Func,self).__init__(geometry)
 
-        self.__order = map(lambda x: x.clone(),order)
-        self.__order_defs = map(lambda x: x.clone(),order_defs)
-        self.__order_var = order_var.clone() if order_var else None
-        self.__named = map(lambda x: x.clone(),named)
-        self.__named_defs = map(lambda x: x.clone(),named_defs)
-        self.__named_var = named_var.clone() if named_var else None
-        self.__body = body.clone()
+        self.__order = order
+        self.__order_defs = order_defs
+        self.__order_var = order_var
+        self.__named = named
+        self.__named_defs = named_defs
+        self.__named_var = named_var
+        self.__body = body
 
     def __str__(self):
         def spIfNNil(ls):
@@ -276,21 +218,6 @@ class Func(PsAtom):
                      ' '.join(map(lambda x: str(x) + '!',self.__named_defs)) + spIfNNil(self.__named_defs) + \
                      (str(self.__named_var) + '+ ' if self.__named_var else '') + \
                      str(self.__body) + ']'
-
-    def __repr__(self):
-        return 'Parser.Func(' + repr(self.__order) + ',' + \
-                                repr(self.__order_defs) + ',' + \
-                                repr(self.__order_var) + ',' + \
-                                repr(self.__named) + ',' + \
-                                repr(self.__named_defs) + ',' + \
-                                repr(self.__named_var) + ',' + \
-                                repr(self.__body) + ',' + \
-                                repr(self.geometry) + ')'
-
-    def clone(self):
-        return Func(self.__order,self.__order_defs,self.__order_var,
-                    self.__named,self.__named_defs,self.__named_var,
-                    self.__body,self.geometry)
 
     @property
     def order(self):
@@ -337,16 +264,10 @@ class Dict(PsAtom):
 
         super(Dict,self).__init__(geometry)
 
-        self.__keyvalues = map(lambda x: (x[0].clone(),x[1].clone()),keyvalues)
+        self.__keyvalues = keyvalues
 
     def __str__(self):
         return '<' + ' '.join(map(lambda x: str(x[0]) + ' ' + str(x[1]),self.__keyvalues)) + '>'
-
-    def __repr__(self):
-        return 'Parser.Dict(' + repr(self.__keyvalues) + ',' + repr(self.geometry) + ')'
-
-    def clone(self):
-        return Dict(self.__keyvalues,self.geometry)
 
     @property
     def keyvalues(self):

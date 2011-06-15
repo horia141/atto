@@ -14,7 +14,7 @@ class TkAtom(object):
         return 'TkAtom \'' + self.__text + '\''
 
     def __repr__(self):
-        return 'Tokenizer.TkAtom(' + repr(self.__text) + ',' + repr(self.__geometry) + ')'
+        return str(self)
 
     @property
     def text(self):
@@ -28,134 +28,77 @@ class CallBeg(TkAtom):
     def __str__(self):
         return 'CallBeg'
 
-    def __repr__(self):
-        return 'Tokenizer.CallBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class CallEnd(TkAtom):
     def __str__(self):
         return 'CallEnd'
-
-    def __repr__(self):
-        return 'Tokenizer.CallEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class Dollar(TkAtom):
     def __str__(self):
         return 'Dollar'
 
-    def __repr__(self):
-        return 'Tokenizer.Dollar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class Boolean(TkAtom):
     def __str__(self):
         return 'Boolean "' + self.text + '"'
-
-    def __repr__(self):
-        return 'Tokenizer.Boolean(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class Number(TkAtom):
     def __str__(self):
         return 'Number "' + self.text + '"'
 
-    def __repr__(self):
-        return 'Tokenizer.Number(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class Symbol(TkAtom):
     def __str__(self):
         return 'Symbol "' + self.text + '"'
-
-    def __repr__(self):
-        return 'Tokenizer.Symbol(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class String(TkAtom):
     def __str__(self):
         return 'String "' + self.text + '"'
 
-    def __repr__(self):
-        return 'Tokenizer.String(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class StringEval(TkAtom):
     def __str__(self):
         return 'StringEval "' + self.text + '"'
-
-    def __repr__(self):
-        return 'Tokenizer.StringEval(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class FuncBeg(TkAtom):
     def __str__(self):
         return 'FuncBeg'
 
-    def __repr__(self):
-        return 'Tokenizer.FuncBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class FuncEnd(TkAtom):
     def __str__(self):
         return 'FuncEnd'
-
-    def __repr__(self):
-        return 'Tokenizer.FuncEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class FuncName(TkAtom):
     def __str__(self):
         return 'FuncName'
 
-    def __repr__(self):
-        return 'Tokenizer.FuncName(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class FuncStar(TkAtom):
     def __str__(self):
         return 'FuncStar'
-
-    def __repr__(self):
-        return 'Tokenizer.FuncStar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class FuncPlus(TkAtom):
     def __str__(self):
         return 'FuncPlus'
 
-    def __repr__(self):
-        return 'Tokenizer.FuncPlus(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class BlockBeg(TkAtom):
     def __str__(self):
         return 'BlockBeg'
-
-    def __repr__(self):
-        return 'Tokenizer.BlockBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class BlockEnd(TkAtom):
     def __str__(self):
         return 'BlockEnd'
 
-    def __repr__(self):
-        return 'Tokenizer.BlockEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class DictBeg(TkAtom):
     def __str__(self):
         return 'DictBeg'
-
-    def __repr__(self):
-        return 'Tokenizer.DictBeg(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 class DictEnd(TkAtom):
     def __str__(self):
         return 'DictEnd'
 
-    def __repr__(self):
-        return 'Tokenizer.DictEnd(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class DictBar(TkAtom):
     def __str__(self):
         return 'DictBar'
 
-    def __repr__(self):
-        return 'Tokenizer.DictBar(' + repr(self.text) + ',' + repr(self.geometry) + ')'
-
 class CommonEqual(TkAtom):
     def __str__(self):
         return 'CommonEqual'
-
-    def __repr__(self):
-        return 'Tokenizer.CommonEqual(' + repr(self.text) + ',' + repr(self.geometry) + ')'
 
 def tokenize(stream):
     assert(isinstance(stream,Stream.Buffer))

@@ -33,7 +33,7 @@ def Let(va_star):
     if len(va) < 3 or len(va) % 2 == 0:
         raise Exception('<<BuiltIn "Let">> must be called with an odd number (>= 3) of arguments!')
 
-    body = va[-1].clone()
+    body = va[-1]
     del va[-1]
     names = va[0::2]
     values = va[1::2]
@@ -42,19 +42,23 @@ def Let(va_star):
 
     new_kv = dict(zip(map(lambda x: x.value,names),values))
 
-    for value in values:
-        if isFunc(value):
+    for i in range(0,len(values)):
+        if isFunc(values[i]):
+            values[i] = values[i].clone()
+
             for (k,v) in new_kv.iteritems():
-                value.envSet(k,v)
+                values[i].envSet(k,v)
 
     if isFunc(body):
+        body = body.clone()
+
         for (k,v) in new_kv.iteritems():
             body.envSet(k,v)
 
     if isBlock(body):
         return body.apply([],{})
 
-    return body.clone()
+    return body
 
 def Seq(va_star):
     pass

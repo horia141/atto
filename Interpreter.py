@@ -7,19 +7,25 @@ import Tokenizer
 import Parser
 
 class InAtom(object):
-    pass
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        raise Exception('Invalid call to "__str__" for InAtom object!')
+
+    def __repr__(self):
+        return str(self)
 
 class Boolean(InAtom):
     def __init__(self,value):
         assert(isinstance(value,bool))
 
+        super(Boolean,self).__init__()
+
         self.__value = value
 
     def __str__(self):
         return '#T' if self.__value else '#F'
-
-    def __repr__(self):
-        return 'Interpreter.Boolean(' + repr(self.__value) + ')'
 
     def __eq__(self,other):
         if not isinstance(other,Boolean):
@@ -38,13 +44,12 @@ class Number(InAtom):
     def __init__(self,value):
         assert(isinstance(value,numbers.Number))
 
+        super(Number,self).__init__()
+
         self.__value = value
 
     def __str__(self):
         return str(self.__value)
-
-    def __repr__(self):
-        return 'Interpreter.Number(' + repr(self.__value) + ')'
 
     def __eq__(self,other):
         if not isinstance(other,Number):
@@ -63,13 +68,12 @@ class Symbol(InAtom):
     def __init__(self,value):
         assert(isinstance(value,str))
 
-        self.__value = str(value)
+        super(Symbol,self).__init__()
+
+        self.__value = value
 
     def __str__(self):
         return self.__value
-
-    def __repr__(self):
-        return 'Interpreter.Symbol(' + repr(self.__value) + ')'
 
     def __eq__(self,other):
         if not isinstance(other,Symbol):
@@ -88,13 +92,12 @@ class String(InAtom):
     def __init__(self,value):
         assert(isinstance(value,str))
 
-        self.__value = str(value)
+        super(String,self).__init__()
+
+        self.__value = value
 
     def __str__(self):
         return '\'' + self.__value + '\''
-
-    def __repr__(self):
-        return 'Interpreter.String(' + repr(self.__value) + ')'
 
     def __eq__(self,other):
         if not isinstance(other,String):
@@ -114,16 +117,15 @@ class Argument(object):
         assert(isinstance(name,str))
         assert(default == None or isinstance(default,InAtom))
 
-        self.__name = str(name)
-        self.__default = default.clone() if default != None else None
+        self.__name = name
+        self.__default = default
 
     def __str__(self):
         return self.__name + \
                ('=' + str(self.__default) if self.__default else '')
 
     def __repr__(self):
-        return 'Interpreter.Argument(' + repr(self.__name) + ',' + \
-                                         repr(self.__default) + ')'
+        return str(self)
 
     def clone(self):
         return Argument(self.__name,self.__default)
@@ -153,12 +155,14 @@ class Callable(InAtom):
         assert(all(map(lambda x: isinstance(x,Argument),named_defs)))
         assert(named_var == None or isinstance(named_var,str))
 
-        self.__order = map(lambda x: x.clone(),order)
-        self.__order_defs = map(lambda x: x.clone(),order_defs)
-        self.__order_var = str(order_var) if order_var else None
-        self.__named = map(lambda x: x.clone(),named)
-        self.__named_defs = map(lambda x: x.clone(),named_defs)
-        self.__named_var = str(named_var) if named_var else None
+        super(Callable,self).__init__()
+
+        self.__order = order
+        self.__order_defs = order_defs
+        self.__order_var = order_var
+        self.__named = named
+        self.__named_defs = named_defs
+        self.__named_var = named_var
 
     def __str__(self):
         def spIfNNil(ls):
@@ -172,14 +176,6 @@ class Callable(InAtom):
                      (str(self.__named_var) + '+ ' if self.__named_var else '') + \
                      str(self._sp_str()) + ']'
 
-    def __repr__(self):
-        return 'Interpreter.Callable(' + repr(self.__order) + ',' + \
-                                         repr(self.__order_defs) + ',' + \
-                                         repr(self.__order_var) + ',' + \
-                                         repr(self.__named) + ',' + \
-                                         repr(self.__named_defs) + ',' + \
-                                         repr(self.__named_var) + ')'
-
     def __eq__(self,other):
         return False
 
@@ -191,6 +187,8 @@ class Callable(InAtom):
 
     def apply(self,order_args,named_args):
         assert(isinstance(order_args,list))
+        if not all(map(lambda x: isinstance(x,InAtom),order_args)):
+            print order_args
         assert(all(map(lambda x: isinstance(x,InAtom),order_args)))
         assert(isinstance(named_args,dict))
         assert(all(map(lambda x: isinstance(x,str),named_args.keys())))
@@ -259,21 +257,25 @@ class Callable(InAtom):
         return self._sp_apply(order,order_defs,order_var,named,named_defs,named_var)
 
     def curry(self,va):
-        pass
+        raise Exception('Invalid call to "curry" for Callable object!')
 
     def orderInject(self,order_arg):
-        assert(isinstance(order_arg,str))
-
-        self.__order.insert(0,Argument(order_arg,None))
+        raise Exception('Invalid call to "orderInject" for Callable object!')
 
     def namedInject(self,named_arg):
-        assert(isinstance(named_arg,str))
+        raise Exception('Invalid call to "namedInject" for Callable object!')
 
-        self.__named.insert(0,Argument(named_arg,None))
+    def envHasKey(self,key):
+        raise Exception('Invalid call to "envHasKey" for Callable object!')
+
+    def envGet(self,key):
+        raise Exception('Invalid call to "envGet" for Callable object!')
+
+    def envSet(self,key,value):
+        raise Exception('Invalid call to "envSet" for Callable object!')
 
     def clone(self):
-        return Func(self.__order,self.__order_defs,self.__order_var,
-                    self.__named,self.__named_defs,self.__named_var)
+        raise Exception('Invalid call to "clone" for Callable object!')
 
     @property
     def order(self):
@@ -326,24 +328,14 @@ class Func(Callable):
 
         super(Func,self).__init__(order,order_defs,order_var,named,named_defs,named_var)
 
-        self.__body = body.clone()
-        self.__env = dict([(str(k),v.clone()) for (k,v) in env.iteritems()])
-
-    def __repr__(self):
-        return 'Interpreter.Func(' + repr(self.order) + ',' + \
-                                     repr(self.orderDefs) + ',' + \
-                                     repr(self.orderVar) + ',' + \
-                                     repr(self.named) + ',' + \
-                                     repr(self.namedDefs) + ',' + \
-                                     repr(self.namedVar) + ',' + \
-                                     repr(self.__body) + ',' + \
-                                     repr(self.__env) + ')'
+        self.__body = body
+        self.__env = env
 
     def _sp_str(self):
         return str(self.__body)
 
     def _sp_apply(self,order,order_defs,order_var,named,named_defs,named_var):
-        new_env = dict([(str(k),v.clone()) for (k,v) in self.__env.iteritems()])
+        new_env = dict(self.__env)
         new_env.update(order)
         new_env.update(order_defs)
         new_env.update(order_var)
@@ -352,6 +344,16 @@ class Func(Callable):
         new_env.update(named_var)
     
         return interpret(self.__body,new_env,self)
+
+    def orderInject(self,order_arg):
+        assert(isinstance(order_arg,str))
+
+        self.__order.insert(0,Argument(order_arg,None))
+
+    def namedInject(self,named_arg):
+        assert(isinstance(named_arg,str))
+
+        self.__named.insert(0,Argument(named_arg,None))
 
     def envHasKey(self,key):
         assert(isinstance(key,str))
@@ -462,10 +464,6 @@ class BuiltIn(Callable):
 
         self.__func = func
 
-    def __repr__(self):
-        fullname = inspect.getmodule(self.__func).__name__ + '.' + self.__func.__name__
-        return 'Interpreter.BuiltIn(' + fullname + ')'
-
     def _sp_str(self):
         return '<<BuiltIn "' + self.__func.__name__ + '">>'
 
@@ -494,13 +492,12 @@ class Dict(InAtom):
         assert(all(map(lambda x: isinstance(x[0],InAtom),keyvalues)))
         assert(all(map(lambda x: isinstance(x[1],InAtom),keyvalues)))
 
-        self.__keyvalues = map(lambda x: (x[0].clone(),x[1].clone()),keyvalues)
+        super(Dict,self).__init__()
+
+        self.__keyvalues = keyvalues
 
     def __str__(self):
         return '<' + ' '.join(map(lambda x: str(x[0]) + ' ' + str(x[1]),self.__keyvalues)) + '>'
-
-    def __repr__(self):
-        return 'Interpreter.Dict(' + repr(self.__keyvalues) + ')'
 
     def __eq__(self,other):
         if not isinstance(other,Dict):
