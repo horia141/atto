@@ -1,4 +1,10 @@
-* [15.06.2011-xx.xx.xxxx]
++ [15.06.2011-15.06.2011]
+  > Fixed this. I've removed much extraneous cloning. Only several
+  > builtin functions need produce a clone now: some functions in
+  > "Core.Base", "Core.Data.Dict", "Core.Data.Func" and "Core.Control.Flow".
+  > The environment problem is somewhat mitigated by all the shallow
+  > copying we're doing. We'll scratch this for now.
+
   There is too much copying going around. A mechanism shoul be in place
   for coping with this. There are only so many mutable like operations
   happening. We could implement usage counters and only modify when
@@ -6,7 +12,12 @@
   function in existance shouldn't have a copy of the whole environment.
   Massive sharing is possible here. Maybe not in Python, though.
 
-* [15.06.2011-xx.xx.xxxx]
++ [15.06.2011-15.06.2011]
+  > I've made copies of many functions in the "Callable" class. Also,
+  > I've removed all but the necessary ones from "BuiltIn". If anyone
+  > does call a function like "curry" or "namedInject" on a "BuiltIn",
+  > the "Callable" version will raise an exception.
+
   Make builtin functions "Callable" agnostic. They should work on any
   callable object, with the caveat that most operations raise an exception
   on "BuiltIn" objects.
