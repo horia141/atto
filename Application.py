@@ -4,6 +4,7 @@ import Parser
 import Interpreter
 
 import Core.Utils
+import Core.Base
 import Core.Data.Boolean
 import Core.Data.Number
 import Core.Data.Symbol
@@ -17,7 +18,11 @@ def doit(program):
     b = Tokenizer.tokenize(a)
     c = Parser.parse(b)
 
-    basic_env = {'is-boolean?':     Interpreter.BuiltIn(Core.Data.Boolean.IsBoolean),
+    basic_env = {'type':            Interpreter.BuiltIn(Core.Base.Type),
+                 'eq?':             Interpreter.BuiltIn(Core.Base.Eq),
+                 'neq?':            Interpreter.BuiltIn(Core.Base.Neq),
+                 'same-type?':      Interpreter.BuiltIn(Core.Base.SameType),
+                 'is-boolean?':     Interpreter.BuiltIn(Core.Data.Boolean.IsBoolean),
                  'not':             Interpreter.BuiltIn(Core.Data.Boolean.Not), 
                  'and':             Interpreter.BuiltIn(Core.Data.Boolean.And),
                  'or':              Interpreter.BuiltIn(Core.Data.Boolean.Or),

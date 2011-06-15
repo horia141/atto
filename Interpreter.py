@@ -510,7 +510,7 @@ class Dict(InAtom):
             return False
 
         for (key,value) in self.__keyvalues:
-            for (okey,ovalue) in self.__keyvalues:
+            for (okey,ovalue) in other.__keyvalues:
                 if key == okey:
                     break
             else:

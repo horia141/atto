@@ -15,25 +15,34 @@ def Type(x):
         return Interpreter.Symbol('Boolean')
     if isNumber(x):
         return Interpreter.Symbol('Number')
-    if isNumber(x):
+    if isSymbol(x):
         return Interpreter.Symbol('Symbol')
-    if isNumber(x):
+    if isString(x):
         return Interpreter.Symbol('String')
-    if isNumber(x):
+    if isFunc(x):
         return Interpreter.Symbol('Func')
-    if isNumber(x):
+    if isDict(x):
         return Interpreter.Symbol('Dict')
 
     raise Exception('Critical Error: Invalid control path!')
 
-def Equal(x):
-    pass
+def Eq(x,y):
+    assert(isinstance(x,Interpreter.InAtom))
+    assert(isinstance(y,Interpreter.InAtom))
 
-def NotEqual(x):
-    pass
+    return x == y
 
-def SameType(x):
-    pass
+def Neq(x,y):
+    assert(isinstance(x,Interpreter.InAtom))
+    assert(isinstance(y,Interpreter.InAtom))
+
+    return x != y
+
+def SameType(x,y):
+    assert(isinstance(x,Interpreter.InAtom))
+    assert(isinstance(y,Interpreter.InAtom))
+
+    return isinstance(x,y.__class__)
 
 def Module():
     pass
