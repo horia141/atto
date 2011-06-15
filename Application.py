@@ -75,6 +75,7 @@ def doit(program):
                  'set':             Interpreter.BuiltIn(Core.Data.Dict.Set),
                  'keys':            Interpreter.BuiltIn(Core.Data.Dict.Keys),
                  'values':          Interpreter.BuiltIn(Core.Data.Dict.Values),
-                 'if':              Interpreter.BuiltIn(Core.Control.Flow.If)}
+                 'if':              Interpreter.BuiltIn(Core.Control.Flow.If),
+                 'let':             Interpreter.BuiltIn(Core.Control.Flow.Let)}
 
     return Interpreter.interpret(c[1],basic_env,None)
