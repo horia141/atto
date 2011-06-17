@@ -69,21 +69,6 @@ class Call(PsAtom):
     def namedArgs(self):
         return self.__named_args
 
-class Self(PsAtom):
-    def __init__(self,text,geometry):
-        assert(isinstance(text,str))
-        
-        super(Self,self).__init__(geometry)
-
-        self.__text = text
-
-    def __str__(self):
-        return self.__text
-
-    @property
-    def text(self):
-        return self.__text
-
 class Boolean(PsAtom):
     def __init__(self,text,geometry):
         assert(isinstance(text,str))
@@ -302,8 +287,6 @@ def parse(tokens,pos=0):
             values.append(Call(action,order_args,named_args,geometry))
         elif isinstance(tokens[pos],Tokenizer.CallEnd):
             raise Exception('Invalid ")" character!')
-        elif isinstance(tokens[pos],Tokenizer.Dollar):
-            values.append(Self(tokens[pos].text,tokens[pos].geometry))
         elif isinstance(tokens[pos],Tokenizer.Boolean):
             values.append(Boolean(tokens[pos].text,tokens[pos].geometry))
         elif isinstance(tokens[pos],Tokenizer.Number):

@@ -78,4 +78,4 @@ def doit(program):
                  'if':              Interpreter.BuiltIn(Core.Control.Flow.If),
                  'let':             Interpreter.BuiltIn(Core.Control.Flow.Let)}
 
-    return Interpreter.interpret(c[1],basic_env,None)
+    return Interpreter.interpret(c[1],basic_env)

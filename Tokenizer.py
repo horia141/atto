@@ -32,10 +32,6 @@ class CallEnd(TkAtom):
     def __str__(self):
         return 'CallEnd'
 
-class Dollar(TkAtom):
-    def __str__(self):
-        return 'Dollar'
-
 class Boolean(TkAtom):
     def __str__(self):
         return 'Boolean "' + self.text + '"'
@@ -108,7 +104,6 @@ def tokenize(stream):
     tokens = []
     parsers = [(CallBeg,re.compile(r'[(]'),0),
                (CallEnd,re.compile(r'[)]'),0),
-               (Dollar,re.compile(r'[$]'),0),
                (Boolean,re.compile(r'#T|#F'),0),
                (Number,re.compile(r'-?[0-9]+(\.[0-9]+)?'),0),
                (Symbol,re.compile(r'[a-zA-Z_]([a-zA-Z0-9-_\?]|:)*'),0),

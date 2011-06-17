@@ -343,7 +343,7 @@ class Func(Callable):
         new_env.update(named_defs)
         new_env.update(named_var)
     
-        return interpret(self.__body,new_env,self)
+        return interpret(self.__body,new_env)
 
     def orderInject(self,order_arg):
         assert(isinstance(order_arg,str))
@@ -561,15 +561,14 @@ class Dict(InAtom):
     def values(self):
         return [v for (k,v) in self.__keyvalues]
 
-def interpret(atom,env,curr_func):
+def interpret(atom,env):
     assert(isinstance(atom,Parser.PsAtom))
     assert(isinstance(env,dict))
     assert(all(map(lambda x: isinstance(x,str),env.iterkeys())))
     assert(all(map(lambda x: isinstance(x,InAtom),env.itervalues())))
-    assert(curr_func == None or isinstance(curr_func,Func))
     
     if isinstance(atom,Parser.Call):
-        action = interpret(atom.action,env,curr_func)
+        action = interpret(atom.action,env)
 
         if isinstance(action,Symbol):
             if action.value in env:
@@ -591,10 +590,10 @@ def interpret(atom,env,curr_func):
             named_args = {}
 
             for arg in atom.orderArgs:
-                order_args.append(interpret(arg,env,curr_func))
+                order_args.append(interpret(arg,env))
 
             for arg in atom.namedArgs:
-                name = interpret(arg.name,env,curr_func)
+                name = interpret(arg.name,env)
 
                 if not isinstance(name,Symbol):
                     raise Exception('Named argument name isn\'t a Symbol!')
@@ -602,12 +601,12 @@ def interpret(atom,env,curr_func):
                 if name.value in named_args:
                     raise Exception('Named argument "' + name.value + '" appears more than once!')
 
-                named_args[name.value] = interpret(arg.value,env,curr_func)
+                named_args[name.value] = interpret(arg.value,env)
 
             return fn.apply(order_args,named_args)
         elif isinstance(fn,Dict):
             if len(atom.orderArgs) == 1 and len(atom.namedArgs) == 0:
-                return fn.get(interpret(atom.orderArgs[0],env,curr_func))
+                return fn.get(interpret(atom.orderArgs[0],env))
             else:
                 raise Exception('Cannot apply more than one argument to a dictionary!')
         else:
@@ -627,12 +626,10 @@ def interpret(atom,env,curr_func):
         return String(atom.text)
     elif isinstance(atom,Parser.StringEval):
         raise Exception('Execution path not yet implemented!')
-    elif isinstance(atom,Parser.Self):
-        return curr_func
     elif isinstance(atom,Parser.Func):
         def evalArg(arg,target,names):
-            name = interpret(arg.name,env,curr_func)
-            default = interpret(arg.default,env,curr_func) if arg.hasDefault else None
+            name = interpret(arg.name,env)
+            default = interpret(arg.default,env) if arg.hasDefault else None
 
             if not isinstance(name,Symbol):
                 raise Exception('Argument name can\'t be anything but a Symbol!')
@@ -659,7 +656,7 @@ def interpret(atom,env,curr_func):
             evalArg(order_arg,order_defs,names)
 
         if atom.hasOrderVar:
-            name = interpret(atom.orderVar,env,curr_func)
+            name = interpret(atom.orderVar,env)
 
             if not isinstance(name,Symbol):
                 raise Exception('Argument name can\'t be anything but a Symbol!')
@@ -676,7 +673,7 @@ def interpret(atom,env,curr_func):
             evalArg(named_arg,named_defs,names)
 
         if atom.hasNamedVar:
-            name = interpret(atom.namedVar,env,curr_func)
+            name = interpret(atom.namedVar,env)
 
             if not isinstance(name,Symbol):
                 raise Exception('Argument name can\'t be anything but a Symbol!')
@@ -691,8 +688,8 @@ def interpret(atom,env,curr_func):
         keyvalues = []
 
         for (key,value) in atom.keyvalues:
-            keyvalues.append((interpret(key,env,curr_func),
-                              interpret(value,env,curr_func)))
+            keyvalues.append((interpret(key,env),
+                              interpret(value,env)))
 
         return Dict(keyvalues)
     else:
