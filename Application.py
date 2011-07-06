@@ -1,17 +1,11 @@
+import getopt
+import os
+import os.path
+
 import Stream
 import Tokenizer
 import Parser
 import Interpreter
-
-import Core.Utils
-import Core.Base
-import Core.Data.Boolean
-import Core.Data.Number
-import Core.Data.Symbol
-import Core.Data.String
-import Core.Data.Func
-import Core.Data.Dict
-import Core.Control.Flow
 
 class ModuleCache(object):
     def __init__(self):
@@ -141,58 +135,99 @@ def fastInterpret(program):
 
     return Interpreter.interpret(c[1],{})
 
-def moduleName(name):
-    name_parts = name.split('.')
-
-    if len(name_parts) > 1:
-        return (name,[name_parts[-1]])
-    else:
-        return (name,[])
-
-def run(program):
-    basic_env = {}
-    flatten_modules = frozenset(['Core.Base'])
-    builtin_modules = ['Core.Base',
-                       'Core.Data.Boolean',
-                       'Core.Data.Number',
-                       'Core.Data.Symbol',
-                       'Core.Data.String',
-                       'Core.Data.Func',
-                       'Core.Data.Dict',
-                       'Core.Control.Flow']
-
-    for builtin_module_name in builtin_modules:
-        (bef,aft) = moduleName(builtin_module_name)
-        mod = __import__(bef,fromlist=aft)
-
-        if not 'GetModule' in mod.__dict__:
-            raise Exception('Python module "' + builtin_module_name + '" does not contain a valid Atto module!')
-
-        attoMod = mod.GetModule()
-
-        if not isinstance(attoMod,Module):
-            raise Exception('Python module "' + builtin_module_name + '" does not contain a valid Atto module!')
-
-        basic_env[attoMod.name] = attoMod
-
-        if builtin_module_name in flatten_modules:
-            for export in attoMod.exports:
-                basic_env[export] = attoMod.lookup(export)
-
-    a = Stream.Buffer(program)
-    b = Tokenizer.tokenize(a)
+def run(argv):
     mc = ModuleCache()
-    pos = 0
+    toplevel_env = {}
+    start = 'Main:Start'
+    flatten_modules = frozenset(['./Core/Base.py'])
+    source_names = ['./Core/Base.py',
+                    './Core/Data/Boolean.py',
+                    './Core/Data/Number.py',
+                    './Core/Data/Symbol.py',
+                    './Core/Data/String.py',
+                    './Core/Data/Func.py',
+                    './Core/Data/Dict.py',
+                    './Core/Control/Flow.py']
 
-    while pos < len(b):
-        (pos,c) = Parser.parse(b,pos)
-        new_mod = Interpreter.interpret(c,basic_env)
+    # Parse "command-line" arguments.
 
-        if not isinstance(new_mod,Module):
-            raise Exception('Stop messing around!')
+    try:
+        opts,args = getopt.gnu_getopt(argv[1:],'hs:',['help','start='])
+    except getopt.GetoptError,err:
+        print str(err)
+        _usage()
+        return 2
 
-        mc.add(new_mod)
-        basic_env[new_mod.name] = new_mod
+    for name,value in opts:
+        if name in ('-h','--help'):
+            _usage()
+            return 1
+        elif name in ('-s','--start'):
+            start = value
+        else:
+            assert False
+
+    source_names.extend(args)
+
+    # Load atto and builtin modules.
+
+    try:
+        for source_name in source_names:
+            (root,ext) = os.path.splitext(source_name)
+
+            if ext == '.py':
+                f = open(source_name,'r')
+                text = f.read()
+                f.close()
+
+                hack = compile(text,source_name,mode='exec')
+                mod = eval('(eval(hack),GetModule() if "GetModule" in globals() else None)',{'hack':hack})[1]
+
+                if not mod or not isinstance(mod,Module):
+                    raise Exception('Python module "' + source_name + '" does not contain a valid Atto module!')
+
+                toplevel_env[mod.name] = mod
+                mc.add(mod)
+
+                if source_name in flatten_modules:
+                    for export in mod.exports:
+                        toplevel_env[export] = mod.lookup(export)
+            elif ext == '.atto':
+                f = open(source_name,'r')
+                text = f.read()
+                f.close()
+
+                buff = Stream.Buffer(text)
+                tokens = Tokenizer.tokenize(buff)
+                pos = 0
+
+                while pos < len(tokens):
+                    (pos,c) = Parser.parse(tokens,pos)
+                    mod = Interpreter.interpret(c,toplevel_env)
+
+                    if not isinstance(mod,Module):
+                        raise Exception('Source "' + source_name + '" does not contain a valid Atto module!')
+
+                    toplevel_env[mod.name] = mod
+                    mc.add(mod)
+            else:
+                raise Exception('Unrecognized source path "' + source_name + '"!')
+    except Exception,e:
+        print e
+        return 1
+
+    # Execute the scripts starting at the function specifed
+    # by "start".
 
     mc.resolve()
-    return mc.lookup('Main','Start').apply([],{})
+    (start_mod,start_func) = _moduleName(start)
+    print mc.lookup(start_mod,start_func).apply([],{})
+
+    return 0
+
+def _moduleName(name):
+    name_parts = name.split(':')
+    return (':'.join(name_parts[:-1]),name_parts[-1])
+
+def _usage():
+    pass
