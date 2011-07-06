@@ -1,21 +1,28 @@
 import Interpreter
-import Core.Utils
+import Application
+import Utils
 
-from Core.Utils import isDict
-from Core.Utils import testDict
-from Core.Utils import buildArray
-from Core.Utils import argStarAsList
+def GetModule():
+    return Application.Module(
+        'Core:Data:Dict',
+        {'is-dict?':  Interpreter.BuiltIn(IsDict),
+         'has-key?':  Interpreter.BuiltIn(HasKey),
+         'get':       Interpreter.BuiltIn(Get),
+         'set':       Interpreter.BuiltIn(Set),
+         'keys':      Interpreter.BuiltIn(Keys),
+         'values':    Interpreter.BuiltIn(Values)},
+        {},['is-dict?','has-key?','get','set','keys','values'])
 
 def IsDict(d):
     assert(isinstance(d,Interpreter.InAtom))
 
-    return Interpreter.Boolean(isDict(d))
+    return Interpreter.Boolean(Utils.isDict(d))
 
 def HasKey(d,key):
     assert(isinstance(d,Interpreter.InAtom))
     assert(isinstance(key,Interpreter.InAtom))
 
-    testDict(d,'HasKey')
+    Utils.testDict(d,'HasKey')
 
     return Interpreter.Boolean(d.hasKey(key))
 
@@ -23,7 +30,7 @@ def Get(d,key):
     assert(isinstance(d,Interpreter.InAtom))
     assert(isinstance(key,Interpreter.InAtom))
 
-    testDict(d,'Get')
+    Utils.testDict(d,'Get')
 
     v = d.get(key)
 
@@ -38,9 +45,9 @@ def Set(d,key,value,va_star):
     assert(isinstance(value,Interpreter.InAtom))
     assert(isinstance(va_star,Interpreter.InAtom))
 
-    testDict(d,'Set')
+    Utils.testDict(d,'Set')
 
-    va = argStarAsList(va_star)
+    va = Utils.argStarAsList(va_star)
 
     if len(va) % 2 != 0:
         raise Exception('<<BuiltIn "Set">> must be called with an even number of argument!')
@@ -55,13 +62,13 @@ def Set(d,key,value,va_star):
 def Keys(d):
     assert(isinstance(d,Interpreter.InAtom))
 
-    testDict(d,'Keys')
+    Utils.testDict(d,'Keys')
 
-    return buildArray(d.keys)
+    return Utils.buildArray(d.keys)
 
 def Values(d):
     assert(isinstance(d,Interpreter.InAtom))
 
-    testDict(d,'Values')
+    Utils.testDict(d,'Values')
 
-    return buildArray(d.values)
+    return Utils.buildArray(d.values)

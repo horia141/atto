@@ -66,7 +66,14 @@ class ModuleCache(object):
                         define.envSet(name,value)
 
 class ApAtom(Interpreter.InAtom):
-    pass
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        raise Exception('Invalid call to "__str__" for ApAtom object!')
+
+    def __repr__(self):
+        return str(self)
 
 class Module(ApAtom):
     def __init__(self,name,defines,imports,exports):
@@ -83,6 +90,8 @@ class Module(ApAtom):
         assert(isinstance(exports,list))
         assert(all(map(lambda x: isinstance(x,str),exports)))
         assert(all(map(lambda x: x in defines.keys(),exports)))
+
+        super(Module,self).__init__()
 
         self.__name = name
         self.__defines = defines
@@ -125,104 +134,50 @@ class View(ApAtom):
 class Task(ApAtom):
     pass
 
-def fasti(program):
+def fastInterpret(program):
     a = Stream.Buffer(program)
     b = Tokenizer.tokenize(a)
     c = Parser.parse(b)
 
     return Interpreter.interpret(c[1],{})
 
-def doit(program):
-    basic_env = {'type':                     Interpreter.BuiltIn(Core.Base.Type),
-                 'same-type?':               Interpreter.BuiltIn(Core.Base.SameType),
-                 'eq?':                      Interpreter.BuiltIn(Core.Base.Eq),
-                 'neq?':                     Interpreter.BuiltIn(Core.Base.Neq),
-                 'case':                     Interpreter.BuiltIn(Core.Base.Case),
-                 'id':                       Interpreter.BuiltIn(Core.Base.Id),
-                 'module':                   Interpreter.BuiltIn(Core.Base.Module),
-                 'define':                   fasti('[name value <Type Define Name (name) Value (value)>]'),
-                 'import':                   fasti('[module names* as=full! <Type Import Module (module) Names (names) As (as)>]'),
-                 'export':                   fasti('[names* <Type Export Names (names)>]'),
-                 'Core:Data:Boolean':
-                     Module('Core:Data:Boolean',
-                            {'is-boolean?':  Interpreter.BuiltIn(Core.Data.Boolean.IsBoolean),
-                             'not':          Interpreter.BuiltIn(Core.Data.Boolean.Not), 
-                             'and':          Interpreter.BuiltIn(Core.Data.Boolean.And),
-                             'or':           Interpreter.BuiltIn(Core.Data.Boolean.Or)},
-                            {},['is-boolean?','not','and','or']),
-                 'Core:Data:Number':
-                     Module('Core:Data:Number',
-                            {'pi':           Interpreter.Number(3.1415926535897931),
-                             'e':            Interpreter.Number(2.7182818284590451),
-                             'is-number?':   Interpreter.BuiltIn(Core.Data.Number.IsNumber),
-                             'add':          Interpreter.BuiltIn(Core.Data.Number.Add),
-                             'inc':          Interpreter.BuiltIn(Core.Data.Number.Inc),
-                             'sub':          Interpreter.BuiltIn(Core.Data.Number.Sub),
-                             'dec':          Interpreter.BuiltIn(Core.Data.Number.Dec),
-                             'mul':          Interpreter.BuiltIn(Core.Data.Number.Mul),
-                             'div':          Interpreter.BuiltIn(Core.Data.Number.Div),
-                             'mod':          Interpreter.BuiltIn(Core.Data.Number.Mod),
-                             'lt':           Interpreter.BuiltIn(Core.Data.Number.Lt),
-                             'lte':          Interpreter.BuiltIn(Core.Data.Number.Lte),
-                             'gt':           Interpreter.BuiltIn(Core.Data.Number.Gt),
-                             'gte':          Interpreter.BuiltIn(Core.Data.Number.Gte),
-                             'sin':          Interpreter.BuiltIn(Core.Data.Number.Sin),
-                             'cos':          Interpreter.BuiltIn(Core.Data.Number.Cos),
-                             'tan':          Interpreter.BuiltIn(Core.Data.Number.Tan),
-                             'ctg':          Interpreter.BuiltIn(Core.Data.Number.Ctg),
-                             'asin':         Interpreter.BuiltIn(Core.Data.Number.ASin),
-                             'acos':         Interpreter.BuiltIn(Core.Data.Number.ACos),
-                             'atan':         Interpreter.BuiltIn(Core.Data.Number.ATan),
-                             'actg':         Interpreter.BuiltIn(Core.Data.Number.ACtg),
-                             'rad2deg':      Interpreter.BuiltIn(Core.Data.Number.Rad2Deg),
-                             'deg2rad':      Interpreter.BuiltIn(Core.Data.Number.Deg2Rad),
-                             'exp':          Interpreter.BuiltIn(Core.Data.Number.Exp),
-                             'log':          Interpreter.BuiltIn(Core.Data.Number.Log),
-                             'ln':           Interpreter.BuiltIn(Core.Data.Number.Ln),
-                             'lg':           Interpreter.BuiltIn(Core.Data.Number.Lg),
-                             'sqrt':         Interpreter.BuiltIn(Core.Data.Number.Sqrt),
-                             'pow':          Interpreter.BuiltIn(Core.Data.Number.Pow),
-                             'abs':          Interpreter.BuiltIn(Core.Data.Number.Abs),
-                             'ceill':        Interpreter.BuiltIn(Core.Data.Number.Ceill),
-                             'floor':         Interpreter.BuiltIn(Core.Data.Number.Floor)},
-                            {},['pi','e','is-number?','add','inc','sub','dec','mul','div','mod',
-                                'lt','lte','gt','gte','sin','cos','tan','ctg','asin','acos','actg',
-                                'rad2deg','deg2rad','exp','log','ln','lg','sqrt','pow','abs','ceill',
-                                'floor']),
-                 'Core:Data:Symbol':
-                     Module('Core:Data:Symbol',
-                            {'is-symbol?':   Interpreter.BuiltIn(Core.Data.Symbol.IsSymbol)},
-                            {},['is-symbol?']),
-                 'Core:Data:String':
-                     Module('Core:Data:String',
-                            {'is-string?':   Interpreter.BuiltIn(Core.Data.String.IsString),
-                             'cat':          Interpreter.BuiltIn(Core.Data.String.Cat)},
-                            {},['is-string?','cat']),
-                 'Core:Data:Func':
-                     Module('Core:Data:Func',
-                            {'is-func?':     Interpreter.BuiltIn(Core.Data.Func.IsFunc),
-                             'apply':        Interpreter.BuiltIn(Core.Data.Func.Apply),
-                             'curry':        Interpreter.BuiltIn(Core.Data.Func.Curry),
-                             'inject':       Interpreter.BuiltIn(Core.Data.Func.Inject),
-                             'env-has-key?': Interpreter.BuiltIn(Core.Data.Func.EnvHasKey),
-                             'env-get':      Interpreter.BuiltIn(Core.Data.Func.EnvGet),
-                             'env-set':      Interpreter.BuiltIn(Core.Data.Func.EnvSet)},
-                            {},['is-func?','apply','curry','inject','env-has-key?','env-get',
-                                'env-set']),
-                 'Core:Data:Dict':
-                     Module('Core:Data:Dict',
-                            {'is-dict?':     Interpreter.BuiltIn(Core.Data.Dict.IsDict),
-                             'has-key?':     Interpreter.BuiltIn(Core.Data.Dict.HasKey),
-                             'get':          Interpreter.BuiltIn(Core.Data.Dict.Get),
-                             'set':          Interpreter.BuiltIn(Core.Data.Dict.Set),
-                             'keys':         Interpreter.BuiltIn(Core.Data.Dict.Keys),
-                             'values':       Interpreter.BuiltIn(Core.Data.Dict.Values)},
-                            {},['is-dict?','has-key?','get','set','keys','values']),
-                 'Core:Control:Flow':
-                     Module('Core:Control:Flow',
-                            {'if':           Interpreter.BuiltIn(Core.Control.Flow.If),
-                             'let':          Interpreter.BuiltIn(Core.Control.Flow.Let)},
-                            {},['if','let'])}
+def moduleName(name):
+    name_parts = name.split('.')
+
+    if len(name_parts) > 1:
+        return (name,[name_parts[-1]])
+    else:
+        return (name,[])
+
+def run(program):
+    basic_env = {}
+    flatten_modules = frozenset(['Core.Base'])
+    builtin_modules = ['Core.Base',
+                       'Core.Data.Boolean',
+                       'Core.Data.Number',
+                       'Core.Data.Symbol',
+                       'Core.Data.String',
+                       'Core.Data.Func',
+                       'Core.Data.Dict',
+                       'Core.Control.Flow']
+
+    for builtin_module_name in builtin_modules:
+        (bef,aft) = moduleName(builtin_module_name)
+        mod = __import__(bef,fromlist=aft)
+
+        if not 'GetModule' in mod.__dict__:
+            raise Exception('Python module "' + builtin_module_name + '" does not contain a valid Atto module!')
+
+        attoMod = mod.GetModule()
+
+        if not isinstance(attoMod,Module):
+            raise Exception('Python module "' + builtin_module_name + '" does not contain a valid Atto module!')
+
+        basic_env[attoMod.name] = attoMod
+
+        if builtin_module_name in flatten_modules:
+            for export in attoMod.exports:
+                basic_env[export] = attoMod.lookup(export)
 
     a = Stream.Buffer(program)
     b = Tokenizer.tokenize(a)

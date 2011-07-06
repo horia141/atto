@@ -1,9 +1,14 @@
 import Interpreter
-import Core.Utils
+import Application
+import Utils
 
-from Core.Utils import isSymbol
+def GetModule():
+    return Application.Module(
+        'Core:Data:Symbol',
+        {'is-symbol?':  Interpreter.BuiltIn(IsSymbol)},
+        {},['is-symbol?'])
 
 def IsSymbol(a):
     assert(isinstance(a,Interpreter.InAtom))
 
-    return Interpreter.Boolean(isSymbol(a))
+    return Interpreter.Boolean(Utils.isSymbol(a))

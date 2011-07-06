@@ -1,4 +1,8 @@
 * [06.07.2011-xx.xx.xxxx]
+  Move "Core.Utils" to the root. In "Core" we should only hold things visible
+  in the language, not host specific stuff.
+
+* [06.07.2011-xx.xx.xxxx]
   Massive checks for "Core.Base.Module" function.
 
 * [06.07.2011-xx.xx.xxxx]

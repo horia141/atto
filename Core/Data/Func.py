@@ -1,50 +1,58 @@
 import Interpreter
-import Core.Utils
+import Application
+import Utils
 
-from Core.Utils import isFunc
-from Core.Utils import testFunc
-from Core.Utils import testSymbol
-from Core.Utils import testBoolean
-from Core.Utils import argStarAsList
-from Core.Utils import argPlusAsDict
+def GetModule():
+    return Application.Module(
+        'Core:Data:Func',
+        {'is-func?':      Interpreter.BuiltIn(IsFunc),
+         'apply':         Interpreter.BuiltIn(Apply),
+         'curry':         Interpreter.BuiltIn(Curry),
+         'inject':        Interpreter.BuiltIn(Inject),
+         'env-has-key?':  Interpreter.BuiltIn(EnvHasKey),
+         'env-get':       Interpreter.BuiltIn(EnvGet),
+         'env-set':       Interpreter.BuiltIn(EnvSet)},
+        {},['is-func?','apply','curry','inject','env-has-key?','env-get',
+            'env-set'])
 
 def IsFunc(f):
     assert(isinstance(f,Interpreter.InAtom))
 
-    return Interpreter.Boolean(isFunc(f))
+    return Interpreter.Boolean(Utils.isFunc(f))
 
 def Apply(f,va_star,va_plus):
     assert(isinstance(f,Interpreter.InAtom))
     assert(isinstance(va_star,Interpreter.InAtom))
     assert(isinstance(va_plus,Interpreter.InAtom))
 
-    testFunc(f,'Apply')
+    Utils.testFunc(f,'Apply')
 
-    return f.apply(argStarAsList(va_star),
-                   argPlusAsDict(va_plus))
+    return f.apply(Utils.argStarAsList(va_star),
+                   Utils.argPlusAsDict(va_plus))
 
 def Curry(f,va_star,va_plus):
     assert(isinstance(f,Interpreter.InAtom))
     assert(isinstance(va_star,Interpreter.InAtom))
     assert(isinstance(va_plus,Interpreter.InAtom))
 
-    testFunc(f,'Curry')
+    Utils.testFunc(f,'Curry')
 
     new_f = f.clone()
 
-    return new_f.curry(argStarAsList(va_star),
-                       argPlusAsDict(va_plus))
+    return new_f.curry(Utils.argStarAsList(va_star),
+                       Utils.argPlusAsDict(va_plus))
 
 def Inject(f,arg,named):
     assert(isinstance(f,Interpreter.InAtom))
     assert(isinstance(arg,Interpreter.InAtom))
     assert(isinstance(named,Interpreter.InAtom))
 
-    testFunc(f,'Inject')
-    testSymbol(arg,'Inject')
-    testBoolean(named,'Boolean')
+    Utils.testFunc(f,'Inject')
+    Utils.testSymbol(arg,'Inject')
+    Utils.testBoolean(named,'Boolean')
 
     new_f = f.clone()
+
 
     if named.value:
         new_f.namedInject(arg.value)
@@ -57,8 +65,8 @@ def EnvHasKey(f,key):
     assert(isinstance(f,Interpreter.InAtom))
     assert(isinstance(key,Interpreter.InAtom))
 
-    testFunc(f,'EnvHasKey')
-    testSymbol(key,'EnvHasKey')
+    Utils.testFunc(f,'EnvHasKey')
+    Utils.testSymbol(key,'EnvHasKey')
 
     return Interpreter.Boolean(f.envHasKey(key.value))
 
@@ -66,8 +74,8 @@ def EnvGet(f,key):
     assert(isinstance(f,Interpreter.InAtom))
     assert(isinstance(key,Interpreter.InAtom))
 
-    testFunc(f,'EnvGet')
-    testSymbol(key,'EnvGet')
+    Utils.testFunc(f,'EnvGet')
+    Utils.testSymbol(key,'EnvGet')
 
     v = f.envGet(key.value)
 
@@ -82,10 +90,10 @@ def EnvSet(f,key,value,va_star):
     assert(isinstance(value,Interpreter.InAtom))
     assert(isinstance(va_star,Interpreter.InAtom))
 
-    testFunc(f,'EnvSet')
-    testSymbol(key,'EnvSet')
+    Utils.testFunc(f,'EnvSet')
+    Utils.testSymbol(key,'EnvSet')
 
-    va = argStarAsList(va_star)
+    va = Utils.argStarAsList(va_star)
 
     if len(va) % 2 != 0:
         raise Exception('<<BuiltIn "EnvSet">> must be called with an even number of argument!')
@@ -93,7 +101,7 @@ def EnvSet(f,key,value,va_star):
     new_f = f.clone().envSet(key.value,value)
 
     for i in range(0,len(va),2):
-        testSymbol(va[i],'EnvSet')
+        Utils.testSymbol(va[i],'EnvSet')
         new_f.envSet(va[i].value,va[i+1])
 
     return new_f

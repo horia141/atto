@@ -1,30 +1,36 @@
 import Interpreter
 import Application
-import Core.Utils
+import Utils
 
-from Core.Utils import isBoolean
-from Core.Utils import isNumber
-from Core.Utils import isSymbol
-from Core.Utils import testSymbol
-from Core.Utils import isString
-from Core.Utils import isFunc
-from Core.Utils import isDict
-from Core.Utils import argStarAsList
+def GetModule():
+    return Application.Module(
+        'Core:Base',
+        {'type':        Interpreter.BuiltIn(Type),
+         'same-type?':  Interpreter.BuiltIn(SameType),
+         'eq?':         Interpreter.BuiltIn(Eq),
+         'neq?':        Interpreter.BuiltIn(Neq),
+         'case':        Interpreter.BuiltIn(Case),
+         'id':          Interpreter.BuiltIn(Id),
+         'module':      Interpreter.BuiltIn(Module),
+         'define':      Application.fastInterpret('[name value <Type Define Name (name) Value (value)>]'),
+         'import':      Application.fastInterpret('[module names* as=full! <Type Import Module (module) Names (names) As (as)>]'),
+         'export':      Application.fastInterpret('[names* <Type Export Names (names)>]')},
+        {},['type','same-type?','eq?','neq?','case','id','module','define','import','export'])
 
 def Type(x):
     assert(isinstance(x,Interpreter.InAtom))
 
-    if isBoolean(x):
+    if Utils.isBoolean(x):
         return Interpreter.Symbol('Boolean')
-    if isNumber(x):
+    if Utils.isNumber(x):
         return Interpreter.Symbol('Number')
-    if isSymbol(x):
+    if Utils.isSymbol(x):
         return Interpreter.Symbol('Symbol')
-    if isString(x):
+    if Utils.isString(x):
         return Interpreter.Symbol('String')
-    if isFunc(x):
+    if Utils.isFunc(x):
         return Interpreter.Symbol('Func')
-    if isDict(x):
+    if Utils.isDict(x):
         return Interpreter.Symbol('Dict')
 
     raise Exception('Critical Error: Invalid control path!')
@@ -59,9 +65,9 @@ def Module(name,directives_star):
     assert(isinstance(name,Interpreter.InAtom))
     assert(isinstance(directives_star,Interpreter.InAtom))
 
-    testSymbol(name,'Module')
+    Utils.testSymbol(name,'Module')
 
-    directives = argStarAsList(directives_star)
+    directives = Utils.argStarAsList(directives_star)
 
     c_type = Interpreter.Symbol('Type')
     c_define = Interpreter.Symbol('Define')
@@ -80,9 +86,9 @@ def Module(name,directives_star):
         elif t == c_import:
             imports[directive.get(Interpreter.Symbol('Module'))] = \
                 (directive.get(Interpreter.Symbol('As')).value,
-                 map(lambda x: x.value,argStarAsList(directive.get(Interpreter.Symbol('Names')))))
+                 map(lambda x: x.value,Utils.argStarAsList(directive.get(Interpreter.Symbol('Names')))))
         elif t == c_export:
-            exports.extend(map(lambda x: x.value,argStarAsList(directive.get(Interpreter.Symbol('Names')))))
+            exports.extend(map(lambda x: x.value,Utils.argStarAsList(directive.get(Interpreter.Symbol('Names')))))
         else:
             raise Exception('Invalid module directive type!')
 
