@@ -1,3 +1,11 @@
+* [06.07.2011-xx.xx.xxxx]
+  Massive checks for "Core.Base.Module" function.
+
+* [06.07.2011-xx.xx.xxxx]
+  Make a clear separation between "InAtom" and "ApAtom" objects. Currently,
+  "ApAtoms" are derived from "InAtom", but this is just so many assertions
+  pass in the "Interpreter" functions. I should be clear about what goes where.
+
 + [15.06.2011-15.06.2011]
   > Fixed this. I've removed much extraneous cloning. Only several
   > builtin functions need produce a clone now: some functions in
