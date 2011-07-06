@@ -139,7 +139,7 @@ def run(argv):
     mc = ModuleCache()
     toplevel_env = {}
     start = 'Main:Start'
-    flatten_modules = frozenset(['./Core/Base.py'])
+    flatten_modules = set(['Core:Base'])
     source_names = ['./Core/Base.py',
                     './Core/Data/Boolean.py',
                     './Core/Data/Number.py',
@@ -152,7 +152,7 @@ def run(argv):
     # Parse "command-line" arguments.
 
     try:
-        opts,args = getopt.gnu_getopt(argv[1:],'hs:',['help','start='])
+        opts,args = getopt.gnu_getopt(argv[1:],'hs:f:',['help','start=','flatten='])
     except getopt.GetoptError,err:
         print str(err)
         _usage()
@@ -164,6 +164,8 @@ def run(argv):
             return 1
         elif name in ('-s','--start'):
             start = value
+        elif name in ('-f','--flatten'):
+            flatten_modules.add(value)
         else:
             assert False
 
@@ -188,10 +190,7 @@ def run(argv):
 
                 toplevel_env[mod.name] = mod
                 mc.add(mod)
-
-                if source_name in flatten_modules:
-                    for export in mod.exports:
-                        toplevel_env[export] = mod.lookup(export)
+                _flatten(mod,flatten_modules,toplevel_env)
             elif ext == '.atto':
                 f = open(source_name,'r')
                 text = f.read()
@@ -210,6 +209,7 @@ def run(argv):
 
                     toplevel_env[mod.name] = mod
                     mc.add(mod)
+                    _flatten(mod,flatten_modules,toplevel_env)
             else:
                 raise Exception('Unrecognized source path "' + source_name + '"!')
     except Exception,e:
@@ -228,6 +228,11 @@ def run(argv):
 def _moduleName(name):
     name_parts = name.split(':')
     return (':'.join(name_parts[:-1]),name_parts[-1])
+
+def _flatten(mod,flatten_modules,toplevel_env):
+    if mod.name in flatten_modules:
+        for export in mod.exports:
+            toplevel_env[export] = mod.lookup(export)
 
 def _usage():
     pass
