@@ -120,6 +120,7 @@ def tokenize(stream):
                (DictEnd,re.compile(r'[>]'),0),
                (DictBar,re.compile(r'[|]'),0),
                (CommonEqual,re.compile(r'[=]'),0),
+               (None,re.compile(r'(?m)#.*$'),0),
                (None,re.compile(r'\s+'),0)]
 
     while not local_stream.finished:

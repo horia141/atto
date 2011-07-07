@@ -1,4 +1,4 @@
-* [06.07.2011-07.07.2011]
++ [06.07.2011-07.07.2011]
   > Solved this with the latest commit. The first parameter of the "import"
   > function must now be a block / no-argument function which, when called,
   > produces the required module. We're delaying the execution to the point
@@ -159,7 +159,11 @@
     (que 10) => 30
     (que y=30) => Exception ...
 
-* [30.05.2011-xx.xx.xxxx]
++ [30.05.2011-07.07.2011]
+  > Added this, at last, as a finishing touch to all the nice external
+  > interface stuff for the interpreter. On the other hand, I couldn't
+  > get proper shebang support, so ... I still need to work on that.
+
   Make auto-argument parsing when executing a script. We define a boot
   function and, depending on its arguments, generate appropriate getopt
   calls.

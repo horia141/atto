@@ -1,4 +1,5 @@
 import getopt
+import shlex
 import os
 import os.path
 
@@ -148,17 +149,28 @@ def run(argv):
                     './Core/Data/Func.py',
                     './Core/Data/Dict.py',
                     './Core/Control/Flow.py']
+    interp_argv = []
+    script_argv = []
 
     # Parse "command-line" arguments.
 
     try:
-        opts,args = getopt.gnu_getopt(argv[1:],'hs:f:',['help','start=','flatten='])
+        delim = argv.index('%%%')
+
+        interp_argv = argv[0:delim]
+        script_argv = argv[delim+1:]
+    except ValueError,e:
+        interp_argv = argv
+        script_argv = []
+
+    try:
+        interp_opts,interp_args = getopt.gnu_getopt(interp_argv[1:],'hs:f:',['help','start=','flatten='])
     except getopt.GetoptError,err:
         print str(err)
         _usage()
         return 2
 
-    for name,value in opts:
+    for name,value in interp_opts:
         if name in ('-h','--help'):
             _usage()
             return 1
@@ -169,7 +181,7 @@ def run(argv):
         else:
             assert False
 
-    source_names.extend(args)
+    source_names.extend(interp_args)
 
     # Load atto and builtin modules.
 
@@ -217,7 +229,27 @@ def run(argv):
 
     mc.resolve()
     (start_mod,start_func) = _moduleName(start)
-    print mc.lookup(start_mod,start_func).apply([],{})
+    start = mc.lookup(start_mod,start_func)
+
+    if isinstance(start,Interpreter.Callable):
+        order_args = []
+        named_args = {}
+        i = 0
+
+        while i < len(script_argv):
+            if script_argv[i][0:2] == '--':
+                if i + 1 >= len(script_argv):
+                    raise Exception('Invalid script command-line format!')
+
+                named_args[script_argv[i][2:]] = fastInterpret(script_argv[i+1],{})
+                i = i + 2
+            else:
+                order_args.append(fastInterpret(script_argv[i],{}))
+                i = i + 1
+
+        return start.apply(order_args,named_args)
+    else:
+        print start
 
     return 0
 
