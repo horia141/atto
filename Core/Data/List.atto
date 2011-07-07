@@ -1,0 +1,48 @@
+(module Core:Data:List
+  (import Core:Control:Flow if let)
+  (import Core:Data:Boolean and or)
+  (import Core:Data:Number lt inc)
+  (import Core:Data:Dict is-dict? has-key?)
+
+  (export is-list? is-cons? is-list? make-list cons null)
+
+  (define is-list?
+    [something
+      (or (is-null? (something))
+	  (is-cons? (something)))])
+
+  (define is-cons?
+    [something
+      (if (is-dict? (something))
+	  {if (and (has-key? (something) Head)
+		   (has-key? (something) Tail))
+	      {is-list? (something Tail)}
+	      #F}
+	  #F)])
+
+  (define is-null?
+    [something
+      (eq? (something) NULL)])
+
+  (define make-list
+    [elements*
+      (let _worker
+             [index
+ 	       (if (lt (index) (elements Length))
+		   {cons (elements (index)) (_worker (inc (index)))}
+		   {null})]
+        {_worker 0})])
+
+  (define cons
+    [head tail
+      <Head (head)
+       Tail (tail)>])
+
+  (define null
+    NULL))
+
+  # (define head
+  #   [list
+  #     (case (list)
+  #       (is-cons?) {list Head}
+  #       (is-null?) {error "Cannot apply 'head' to NULL!"})]))

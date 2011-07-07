@@ -9,13 +9,12 @@ def GetModule():
          'same-type?':  Interpreter.BuiltIn(SameType),
          'eq?':         Interpreter.BuiltIn(Eq),
          'neq?':        Interpreter.BuiltIn(Neq),
-         'case':        Interpreter.BuiltIn(Case),
          'id':          Interpreter.BuiltIn(Id),
          'module':      Interpreter.BuiltIn(Module),
          'define':      Application.fastInterpret('[name value <Type Define Name (name) Value (value)>]'),
          'import':      Application.fastInterpret('[module names* as=none! <Type Import Module (module) Names (names) As (as)>]'),
          'export':      Application.fastInterpret('[names* <Type Export Names (names)>]')},
-        {},['type','same-type?','eq?','neq?','case','id','module','define','import','export'])
+        {},['type','same-type?','eq?','neq?','id','module','define','import','export'])
 
 def Type(x):
     assert(isinstance(x,Interpreter.InAtom))
@@ -52,9 +51,6 @@ def Neq(x,y):
     assert(isinstance(y,Interpreter.InAtom))
 
     return Interpreter.Boolean(x != y)
-
-def Case(x,cases_star):
-    pass
 
 def Id(x):
     assert(isinstance(x,Interpreter.InAtom))

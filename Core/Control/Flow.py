@@ -5,9 +5,10 @@ import Utils
 def GetModule():
     return Application.Module(
         'Core:Control:Flow',
-        {'if':   Interpreter.BuiltIn(If),
-         'let':  Interpreter.BuiltIn(Let)},
-        {},['if','let'])
+        {'if':    Interpreter.BuiltIn(If),
+         'case':  Interpreter.BuiltIn(Case),
+         'let':   Interpreter.BuiltIn(Let)},
+        {},['if','case','let'])
 
 def If(test,caseT,caseF):
     assert(isinstance(test,Interpreter.InAtom))
@@ -26,6 +27,31 @@ def If(test,caseT,caseF):
             return caseF.apply([],{})
         else:
             return caseF
+
+def Case(target,va_star):
+    assert(isinstance(target,Interpreter.InAtom))
+    assert(isinstance(va_star,Interpreter.InAtom))
+
+    va = Utils.argStarAsList(va_star)
+
+    va_test = va[0::2]
+    va_action = va[1::2]
+
+    if len(va) % 2 != 0:
+        raise Exception('<<BuiltIn "Case">> must be called with an even number (>= 2) of arguments!')
+
+    for test,action in zip(va_test,va_action):
+        res = test.apply([target],{})
+
+        Utils.testBoolean(res,'Case')
+
+        if res.value:
+            if Utils.isBlock(action):
+                return action.apply([],{})
+            else:
+                return action
+
+    raise Exception('<<BuiltIn "Case">> didn\'t match any case!')
 
 def Let(va_star):
     assert(isinstance(va_star,Interpreter.InAtom))
