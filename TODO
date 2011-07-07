@@ -1,4 +1,9 @@
-* [06.07.2011-xx.xx.xxxx]
+* [06.07.2011-07.07.2011]
+  > Solved this with the latest commit. The first parameter of the "import"
+  > function must now be a block / no-argument function which, when called,
+  > produces the required module. We're delaying the execution to the point
+  > where we can do such a call and have defined symbols.
+
   Think about module dependencies and source-level conflicts than can arise.
   We don't want the programmer to have to organize sources in the call to
   "atto" such that all dependencies are met (in any case, we aren't guaranteed

@@ -128,12 +128,12 @@ class View(ApAtom):
 class Task(ApAtom):
     pass
 
-def fastInterpret(program):
+def fastInterpret(program,env):
     a = Stream.Buffer(program)
     b = Tokenizer.tokenize(a)
     c = Parser.parse(b)
 
-    return Interpreter.interpret(c[1],{})
+    return Interpreter.interpret(c[1],env)
 
 def run(argv):
     mc = ModuleCache()
@@ -173,48 +173,44 @@ def run(argv):
 
     # Load atto and builtin modules.
 
-    try:
-        for source_name in source_names:
-            (root,ext) = os.path.splitext(source_name)
+    for source_name in source_names:
+        (root,ext) = os.path.splitext(source_name)
 
-            if ext == '.py':
-                f = open(source_name,'r')
-                text = f.read()
-                f.close()
+        if ext == '.py':
+            f = open(source_name,'r')
+            text = f.read()
+            f.close()
 
-                hack = compile(text,source_name,mode='exec')
-                mod = eval('(eval(hack),GetModule() if "GetModule" in globals() else None)',{'hack':hack})[1]
+            hack = compile(text,source_name,mode='exec')
+            mod = eval('(eval(hack),GetModule() if "GetModule" in globals() else None)',{'hack':hack})[1]
 
-                if not mod or not isinstance(mod,Module):
-                    raise Exception('Python module "' + source_name + '" does not contain a valid Atto module!')
+            if not mod or not isinstance(mod,Module):
+                raise Exception('Python module "' + source_name + '" does not contain a valid Atto module!')
+
+            toplevel_env[mod.name] = mod
+            mc.add(mod)
+            _flatten(mod,flatten_modules,toplevel_env)
+        elif ext == '.atto':
+            f = open(source_name,'r')
+            text = f.read()
+            f.close()
+
+            buff = Stream.Buffer(text)
+            tokens = Tokenizer.tokenize(buff)
+            pos = 0
+
+            while pos < len(tokens):
+                (pos,c) = Parser.parse(tokens,pos)
+                mod = Interpreter.interpret(c,toplevel_env)
+
+                if not isinstance(mod,Module):
+                    raise Exception('Source "' + source_name + '" does not contain a valid Atto module!')
 
                 toplevel_env[mod.name] = mod
                 mc.add(mod)
                 _flatten(mod,flatten_modules,toplevel_env)
-            elif ext == '.atto':
-                f = open(source_name,'r')
-                text = f.read()
-                f.close()
-
-                buff = Stream.Buffer(text)
-                tokens = Tokenizer.tokenize(buff)
-                pos = 0
-
-                while pos < len(tokens):
-                    (pos,c) = Parser.parse(tokens,pos)
-                    mod = Interpreter.interpret(c,toplevel_env)
-
-                    if not isinstance(mod,Module):
-                        raise Exception('Source "' + source_name + '" does not contain a valid Atto module!')
-
-                    toplevel_env[mod.name] = mod
-                    mc.add(mod)
-                    _flatten(mod,flatten_modules,toplevel_env)
-            else:
-                raise Exception('Unrecognized source path "' + source_name + '"!')
-    except Exception,e:
-        print e
-        return 1
+        else:
+            raise Exception('Unrecognized source path "' + source_name + '"!')
 
     # Execute the scripts starting at the function specifed
     # by "start".

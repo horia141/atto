@@ -187,8 +187,6 @@ class Callable(InAtom):
 
     def apply(self,order_args,named_args):
         assert(isinstance(order_args,list))
-        if not all(map(lambda x: isinstance(x,InAtom),order_args)):
-            print order_args
         assert(all(map(lambda x: isinstance(x,InAtom),order_args)))
         assert(isinstance(named_args,dict))
         assert(all(map(lambda x: isinstance(x,str),named_args.keys())))
