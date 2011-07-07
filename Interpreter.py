@@ -327,7 +327,7 @@ class Func(Callable):
         super(Func,self).__init__(order,order_defs,order_var,named,named_defs,named_var)
 
         self.__body = body
-        self.__env = env
+        self.__env = dict(env)
 
     def _sp_str(self):
         return str(self.__body)

@@ -1,4 +1,8 @@
 + [06.07.2011-07.07.2011]
+  >> Needed a little more work. Now we evaluate the passed in block at
+  >> "ModuleCache.resolve()" time instead of immediatly (the previous strategy
+  >> was basically doing the same things).
+
   > Solved this with the latest commit. The first parameter of the "import"
   > function must now be a block / no-argument function which, when called,
   > produces the required module. We're delaying the execution to the point

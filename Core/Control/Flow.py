@@ -38,7 +38,7 @@ def Let(va_star):
     body = va[-1]
     del va[-1]
     names = va[0::2]
-    values = va[1::2]
+    values = map(lambda x: x.clone(),va[1::2])
 
     map(lambda x: Utils.testSymbol(x,'Let'),names)
 
@@ -46,8 +46,6 @@ def Let(va_star):
 
     for i in range(0,len(values)):
         if Utils.isFunc(values[i]):
-            values[i] = values[i].clone()
-
             for (k,v) in new_kv.iteritems():
                 values[i].envSet(k,v)
 

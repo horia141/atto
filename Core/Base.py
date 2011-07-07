@@ -3,14 +3,6 @@ import Application
 import Utils
 
 def GetModule():
-    def xapply(block):
-        assert(isinstance(block,Interpreter.InAtom))
-
-        Utils.testBlock(block,'xapply')
-        return block.apply([],{})
-
-    lenv = {'xapply':Interpreter.BuiltIn(xapply)}
-
     return Application.Module(
         'Core:Base',
         {'type':        Interpreter.BuiltIn(Type),
@@ -20,9 +12,9 @@ def GetModule():
          'case':        Interpreter.BuiltIn(Case),
          'id':          Interpreter.BuiltIn(Id),
          'module':      Interpreter.BuiltIn(Module),
-         'define':      Application.fastInterpret('[name value <Type Define Name (name) Value (value)>]',{}),
-         'import':      Application.fastInterpret('[module names* as=full! <Type Import Module (xapply (module)) Names (names) As (as)>]',lenv),
-         'export':      Application.fastInterpret('[names* <Type Export Names (names)>]',{})},
+         'define':      Application.fastInterpret('[name value <Type Define Name (name) Value (value)>]'),
+         'import':      Application.fastInterpret('[module names* as=none! <Type Import Module (module) Names (names) As (as)>]'),
+         'export':      Application.fastInterpret('[names* <Type Export Names (names)>]')},
         {},['type','same-type?','eq?','neq?','case','id','module','define','import','export'])
 
 def Type(x):

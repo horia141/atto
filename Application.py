@@ -7,6 +7,7 @@ import Stream
 import Tokenizer
 import Parser
 import Interpreter
+import Utils
 
 class ModuleCache(object):
     def __init__(self):
@@ -37,23 +38,28 @@ class ModuleCache(object):
                 new_env[def_name] = def_value
 
             for (im_mod,(im_newname,im_names)) in module.imports.iteritems():
+                if im_mod.value not in self.__cache:
+                    raise Exception('Importing unknown module "' + im_mod.value + '"!')
+
+                evaled_im_mod = self.__cache[im_mod.value]
+
                 if im_newname == 'none':
                     addname = ''
                 elif im_newname == 'full':
-                    addname = im_mod.name
+                    addname = evaled_im_mod.name
                 else:
                     addname = im_newname
 
                 for im_name in im_names:
-                    if im_name not in im_mod.exports:
-                        raise Exception('Module "' + im_mod.name + '" does not export "' + im_name + '"!')
+                    if im_name not in evaled_im_mod.exports:
+                        raise Exception('Module "' + evaled_im_mod.name + '" does not export "' + im_name + '"!')
 
                     fullname = addname + ':' + im_name if addname else im_name
 
                     if fullname in new_env:
                         raise Exception('Define "' + fullname + '" is imported more than once or is already defined!')
 
-                    new_env[fullname] = im_mod.defines[im_name]
+                    new_env[fullname] = evaled_im_mod.defines[im_name]
 
             for (defname,define) in module.defines.iteritems():
                 if isinstance(define,Interpreter.Func):
@@ -77,7 +83,7 @@ class Module(ApAtom):
         assert(all(map(lambda x: isinstance(x,str),defines.keys())))
         assert(all(map(lambda x: isinstance(x,Interpreter.InAtom),defines.values())))
         assert(isinstance(imports,dict))
-        assert(all(map(lambda x: isinstance(x,Module),imports.keys())))
+        assert(all(map(lambda x: isinstance(x,Interpreter.Symbol),imports.keys())))
         assert(all(map(lambda x: isinstance(x,tuple) and len(x) == 2,imports.values())))
         assert(all(map(lambda x: isinstance(x[0],str),imports.values())))
         assert(all(map(lambda x: isinstance(x[1],list),imports.values())))
@@ -129,12 +135,12 @@ class View(ApAtom):
 class Task(ApAtom):
     pass
 
-def fastInterpret(program,env):
+def fastInterpret(program):
     a = Stream.Buffer(program)
     b = Tokenizer.tokenize(a)
     c = Parser.parse(b)
 
-    return Interpreter.interpret(c[1],env)
+    return Interpreter.interpret(c[1],{})
 
 def run(argv):
     mc = ModuleCache()
@@ -241,10 +247,10 @@ def run(argv):
                 if i + 1 >= len(script_argv):
                     raise Exception('Invalid script command-line format!')
 
-                named_args[script_argv[i][2:]] = fastInterpret(script_argv[i+1],{})
+                named_args[script_argv[i][2:]] = fastInterpret(script_argv[i+1])
                 i = i + 2
             else:
-                order_args.append(fastInterpret(script_argv[i],{}))
+                order_args.append(fastInterpret(script_argv[i]))
                 i = i + 1
 
         return start.apply(order_args,named_args)
