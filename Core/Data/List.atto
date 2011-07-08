@@ -1,10 +1,10 @@
 (module Core:Data:List
-  (import Core:Control:Flow if let)
+  (import Core:Control:Flow if let case)
   (import Core:Data:Boolean and or)
   (import Core:Data:Number lt inc)
   (import Core:Data:Dict is-dict? has-key?)
 
-  (export is-list? is-cons? is-list? make-list cons null)
+  (export is-list? is-cons? is-list? make-list cons null head tail)
 
   (define is-list?
     [something
@@ -39,10 +39,16 @@
        Tail (tail)>])
 
   (define null
-    NULL))
+    NULL)
 
-  # (define head
-  #   [list
-  #     (case (list)
-  #       (is-cons?) {list Head}
-  #       (is-null?) {error "Cannot apply 'head' to NULL!"})]))
+  (define head
+    [list
+      (case (list)
+	(is-cons?) {list Head}
+	(is-null?) {error 'Cannot apply head to NULL'})])
+
+  (define tail
+    [list@(is-list?)
+      (case (list)
+	(is-cons?) {list Tail}
+	(is-null?) {error 'Cannot apply tail to NULL'})]))

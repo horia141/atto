@@ -10,11 +10,12 @@ def GetModule():
          'eq?':         Interpreter.BuiltIn(Eq),
          'neq?':        Interpreter.BuiltIn(Neq),
          'id':          Interpreter.BuiltIn(Id),
+         'error':       Interpreter.BuiltIn(Error),
          'module':      Interpreter.BuiltIn(Module),
          'define':      Application.fastInterpret('[name value <Type Define Name (name) Value (value)>]'),
          'import':      Application.fastInterpret('[module names* as=none! <Type Import Module (module) Names (names) As (as)>]'),
          'export':      Application.fastInterpret('[names* <Type Export Names (names)>]')},
-        {},['type','same-type?','eq?','neq?','id','module','define','import','export'])
+        {},['type','same-type?','eq?','neq?','id','error','module','define','import','export'])
 
 def Type(x):
     assert(isinstance(x,Interpreter.InAtom))
@@ -56,6 +57,13 @@ def Id(x):
     assert(isinstance(x,Interpreter.InAtom))
 
     return x
+
+def Error(message):
+    assert(isinstance(message,Interpreter.InAtom))
+
+    Utils.testString(message,'Error')
+
+    raise Exception(message.value)
 
 def Module(name,directives_star):
     assert(isinstance(name,Interpreter.InAtom))
