@@ -1,3 +1,7 @@
++ [08.07.2011-xx.xx.xxxx]
+  Make escaping of characters work in strings. Also, comments and #T and #F
+  lead to ambiguities.
+
 + [06.07.2011-07.07.2011]
   >> Needed a little more work. Now we evaluate the passed in block at
   >> "ModuleCache.resolve()" time instead of immediatly (the previous strategy

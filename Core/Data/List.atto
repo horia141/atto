@@ -1,3 +1,18 @@
+#
+# This module defines lists (in the sense that it says what a list
+# looks like in Atto) as well as operations of them. The definition
+# we have for a list is classic: A list is either null (the empty list)
+# or consists of a pairing of two elements: some sort of data element
+# (the "head") and another list (the "tail").
+#
+# The constructors we provide for building lists - which mimick the
+# above definition - "cons" and "null" produce normal Atto objects.
+# "cons" produces a dictionary with two keys : "Head" and "Tail", while
+# "null" produces the symbol "NULL". Our filter functions are interested
+# only in checking that whatever we pass have the minimum required
+# structure to be lists, conses, nulls etc. We can, ofcourse, store extra
+# information in a cons cell, for example, if we wanted to.
+#
 (module Core:Data:List
   (import Core:Control:Flow if let case)
   (import Core:Data:Boolean and or)
@@ -6,11 +21,42 @@
 
   (export is-list? is-cons? is-list? make-list cons null head tail)
 
+  #
+  # Test if an object is a list.
+  #
+  # Reason:
+  #   Useful as an argument filter in function definition, or whenever
+  #   we wish to test if something looks like a list. Falls back to
+  #   testing if the object is a cons or a null.
+  # Arguments:
+  #   something: an object to test for being a list.
+  # Return:
+  #   #T if the object is a list, #F otherwise.
+  # Raises:
+  #   Nothing.
+  # 
   (define is-list?
     [something
       (or (is-null? (something))
 	  (is-cons? (something)))])
 
+  #
+  # Test if an object is a cons - a type of list.
+  #
+  # Reason:
+  #   When doing list processing with the Haskell-like representation
+  #   this module employs, we often need to check if an object looks
+  #   like a cons - that is, it has been produced by the "cons" function.
+  #   The check is simple: test if the argument is a dictionary with
+  #   keys "Head" and "Tail". Notice that the check is not strict, other
+  #   keys might be present.
+  # Arguments:
+  #   something: an object to test for being a cons.
+  # Return:
+  #   #T if the object is a cons, #F otherwise.
+  # Raises:
+  #  Nothing.
+  #
   (define is-cons?
     [something
       (if (is-dict? (something))
@@ -20,12 +66,47 @@
 	      #F}
 	  #F)])
 
+  #
+  # Test if an object is a null - a type of list.
+  #
+  # Reason:
+  #   When doing list processing with the Haskell-like representation
+  #   this module employs, we often need to check if an object looks
+  #   like a null - that is, it has been produced by the "null" function.
+  #   The check i simple: test if the argument is the symbol "NULL".
+  # Arguments:
+  #   something: an object to test for being a null.
+  # Return:
+  #   #T if the object is a cons, #F otherwise.
+  # Raises:
+  #   Nothing.
+  #
   (define is-null?
     [something
       (eq? (something) NULL)])
 
+  #
+  # Build a list from a variable number of arguments.
+  #
+  # Reason:
+  #   A quick way to produce a list, almost like a literal for lists.
+  #   This function transforms the variable argument array into a list,
+  #   as understood by this module.
+  # Arguments:
+  #   elements*: an array of elements to turn into a list.
+  # Return:
+  #   A list consisting of the items in "elements", in the order they
+  #   appear.
+  # Raises:
+  #   Nothing.
+  #
   (define make-list
     [elements*
+      # Worker does the actual work. It recusivly builds the output list.
+      # At each invocation, it check if there are any elements left in
+      # "elements" (the base case), and produces null or a cons of the
+      # current ("index") element and the list produced after the current
+      # element, depending on the negative or affirmative answer to the test.
       (let _worker
              [index
  	       (if (lt (index) (elements Length))
@@ -33,22 +114,83 @@
 		   {null})]
         {_worker 0})])
 
+  #
+  # Build a cons - a type of list built as a pairing between some data and
+  # another list (the "Head" and "Tail" keys, respectivly).
+  #
+  # Reason:
+  #   We represent lists in the classic ADT way as either a cons cell or
+  #   a null. This is the cons constructor. The language representation
+  #   is a dictionary with two keys: "Head" and "Tail".
+  # Arguments:
+  #   head: an object, which will be the first element of the list.
+  #   tail: another list.
+  # Return:
+  #   A new list, similar to "tail", with "head" as the first element
+  #   (followed by all the elements in "tail").
+  # Raises:
+  #   Nothing.
+  #
   (define cons
     [head tail
       <Head (head)
        Tail (tail)>])
 
+  #
+  # Build a null - a type of list defined as the simple NULL symbol.
+  # This is used to signal the empty-list and usually appears in cons
+  # cells as the "Tail" key, signaling the end of the list.
+  #
+  # Reason:
+  #   We represent lists in the classic ADT way as either a cons cell or
+  #   null. This is the null constructor. It receives no arguments and
+  #   produces the symbol "NULL".
+  # Arguments:
+  # Return:
+  #   NULL.
+  # Raises:
+  #  Nothing.
+  #
   (define null
     NULL)
 
+  #
+  # Obtain the first element from a list. Must be non-null.
+  #
+  # Reason:
+  #   Given the definition of a list, this function, given a cons,
+  #   produces the "Head" key. That is, given a list, it returns the
+  #   first element from that list.
+  # Arguments:
+  #   list: the list from which we extract the first element.
+  # Return:
+  #   The first element of the list (the "Head" of the cons cell "list").
+  # Raises:
+  #   Error: if "list" is null instead of a cons.
+  #
   (define head
     [list
       (case (list)
 	(is-cons?) {list Head}
 	(is-null?) {error 'Cannot apply head to NULL'})])
 
+  #
+  # Obtain a list consisting of all the elements except the first one.
+  #
+  # Reason:
+  #   Given the definition of a list, this function, given a cons,
+  #   produces the "Tail" key. That is, given a list, it returns a list
+  #   consisting of all but the first element in it.
+  # Arguments:
+  #   list: the list from which we remove the first element.
+  # Return:
+  #   A list consisting of all but the first elements from "list" (the
+  #   "Tail" key of the cons cell "list").
+  # Raises:
+  #   Error: if "list" is null instead of a cons.
+  #
   (define tail
-    [list@(is-list?)
+    [list
       (case (list)
 	(is-cons?) {list Tail}
 	(is-null?) {error 'Cannot apply tail to NULL'})]))
