@@ -1,3 +1,19 @@
+* [16.07.2011-xx.xx.xxxx]
+  Check if we can't make blocks distinct objects in their own rights. Functions
+  would then build off blocks (they would provide environment creation while
+  blocks would provide environment capture for later use).
+
+  We could then have:
+
+    (define map
+      [func list
+        {case (list)
+          (is-cons?) {cons (func (head (list)))
+	  	     	   (map (func (tail (list))))}
+	  (is-null?) {null}}])
+
+  as our function definition. Just a thought.
+
 + [08.07.2011-xx.xx.xxxx]
   Make escaping of characters work in strings. Also, comments and #T and #F
   lead to ambiguities.

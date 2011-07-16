@@ -16,16 +16,17 @@
 (module Core:Data:List
   (import Core:Control:Flow if let case)
   (import Core:Data:Boolean and or)
-  (import Core:Data:Number lt inc)
+  (import Core:Data:Number lt inc add)
   (import Core:Data:Dict is-dict? has-key?)
 
-  (export is-list? is-cons? is-list? make-list cons null head tail)
+  (export is-list? is-cons? is-list? make-list range cons null head tail map
+	  foldl foldr)
 
   #
   # Test if an object is a list.
   #
   # Reason:
-  #   Useful as an argument filter in function definition, or whenever
+  #   Useful as an argument filter in function definition or whenever
   #   we wish to test if something looks like a list. Falls back to
   #   testing if the object is a cons or a null.
   # Arguments:
@@ -115,6 +116,32 @@
         {_worker 0})])
 
   #
+  # Build a list containing a certain range of numbers.
+  #
+  # Reason:
+  #   This is a quick way to produce a list. The resulting list has the
+  #   number "start" as its head, and the number "start+step" as its
+  #   next element, etc. until we reach "stop". If "start >= stop" then
+  #   the list is empty.
+  # Arguments:
+  #   start: the first number in the list.
+  #   stop: the limit of numbers to generate. No number greater than this
+  #     will be produced.
+  #   step=1: a keyword argument used to specify the difference between
+  #     the numbers held in two consecutive list cells.
+  # Return:
+  #   A list containing the numbers "[x = start + i*step && x < stop]".
+  # Raises:
+  #   Nothing.
+  #
+  (define range
+    [start stop step=1!
+      (if (lt (start) (stop))
+	  {cons (start)
+		(range (add (start) (step)) (stop) step=(step))}
+	  {null})])
+
+  #
   # Build a cons - a type of list built as a pairing between some data and
   # another list (the "Head" and "Tail" keys, respectivly).
   #
@@ -193,4 +220,86 @@
     [list
       (case (list)
 	(is-cons?) {list Tail}
-	(is-null?) {error 'Cannot apply tail to NULL'})]))
+	(is-null?) {error 'Cannot apply tail to NULL'})])
+
+  #
+  # Apply a function to each element of a list.
+  #
+  # Reason:
+  #   This function is used to apply a function to each element of a list.
+  #   The function must naturally only accept one argument. This is a special
+  #   case of the generalized "for" statement found in other languages.
+  # Arguments:
+  #   func: a one argument function to apply to each element of the list.
+  #   list: the list to process.
+  # Return:
+  #   A new list, of equal length to "list" and where each corresponding element
+  #   is obtained by applying "func" to the original element in "list".
+  # Raises:
+  #   Nothing.
+  #
+  (define map
+    [func list
+      (case (list)
+	(is-cons?) {cons (func (head (list))) (map (func) (tail (list)))}
+	(is-null?) {null})])
+
+  #
+  # Reduce a list to a single element by applying a function iteratively
+  # on each of its elements.
+  #
+  # Reason:
+  #   This function is used to reduce a list to a single element in a
+  #   controlled manner. It first applies its "func" argument to the last
+  #   two elements of the list. It then applies "func" to the last element
+  #   of the remaing list and the result of the previous call. This process
+  #   continues until we process the whole list, at which point we combine
+  #   "initial" together with the result of "foldr" on the whole list to
+  #   produce the final result, through "func". If the list is empty, we just
+  #   return "initial".
+  # Arguments:
+  #   func: the two order argument function used to reduce "list".
+  #   initial: a saftey value, usually neutral in relation to "func" (such as
+  #     "0" for "add" or "1" for "mul"), returned when the list is empty or
+  #     combined with the result of "foldr" on the whole list otherwise.
+  #   list: the list to reduce.
+  # Return:
+  #   The reduced list, as defined in the Reason section.
+  # Raises:
+  #   Nothing.
+  #
+  (define foldr
+    [func initial list
+      (case (list)
+	(is-cons?) {func (initial)
+			 (foldr (func) (head (list)) (tail (list)))}
+	(is-null?) {initial})])
+
+  #
+  # Reduce a list to a single element by applying a function iteratively
+  # on each of its elements.
+  #
+  # Reason:
+  #   This function is used to reduce a list to a single element in a controlled
+  #   manner. It first applies its "func" argument to the "initial" argument and
+  #   the first element of the list. It then used "func" on this result and the
+  #   second element in the list. This continues until we have no list to consume.
+  #   If the list is empty, we return "initial".
+  # Arguments:
+  #   func: the two order argument function used to reduce "list".
+  #   initial: a saftey value, usually neutral in relation to "func" (such as "0"
+  #     for "add" or "1" for "mul"), returned when the list is empty or combined
+  #     with the result of "foldl" on the whole list otherwise.
+  #   list: the list to reduce.
+  # Return:
+  #   The reduced list, as defined in the Reason section.
+  # Raises:
+  #   Nothing.
+  #
+  (define foldl
+    [func initial list
+      (case (list)
+        (is-cons?) {foldl (func)
+			  (func (initial) (head (list)))
+			  (tail (list))}
+	(is-null?) {initial})]))

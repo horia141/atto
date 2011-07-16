@@ -1,0 +1,17 @@
+(module Core:Data:Array
+  (import Core:Control:Flow if let)
+  (import Core:Data:Number lt add inc)
+  (import Core:Data:Dict set)
+
+  (export range)
+
+  (define range
+    [start stop step=1!
+      (let _worker
+             [length index res
+               (if (lt (index) (stop))
+		   {_worker (inc (length))
+			    (add (index) (step))
+			    (set (res) (length) (index))}
+		   {set (res) Length (length)})]
+        {_worker 0 (start) <>})]))
